@@ -82,7 +82,7 @@ class BaseDatos:
 		self.message_number=self.n
 		if(self.message_number==10):
 			print("Saving Databases")
-			x = save_backup(self.BaseU,self.BaseM)
+			#x = save_backup(self.BaseU,self.BaseM)
 			self.message_number=0
 
 
@@ -101,7 +101,7 @@ class BaseDatos:
 		if self.modep==1: print("DEBUG: User Database: ", BaseUConsulta)
 		BaseMConsulta = self.BaseM
 		posicion=BaseUConsulta.index(user)
-		if sself.modep==1: print("DEBUG: Messages: ", BaseMConsulta[posicion])
+		if self.modep==1: print("DEBUG: Messages: ", BaseMConsulta[posicion])
 		if (BaseMConsulta[posicion]!={}):
 			r_content = "<h1>Messages sent via LoRa</h1>\n"
 			r_content += "\n"

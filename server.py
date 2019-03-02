@@ -172,7 +172,7 @@ class Server:
              print("mem_free: ", gc.mem_free())
              if(request_method=='GET' and file_requested=='/flash/registro'):
                  if (self.modep==1): print('Regreso del Usuario',self.userR)
-                 tabla=BaseDatos()
+                 tabla=BaseDatos(self.modep)
                  response_content,self.userR=tabla.ingresoRegistro(self.userR,1)
                  if(self.modep==1): print('Datos Regreso',response_content)
              else:
@@ -217,7 +217,7 @@ class Server:
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
              elif (file_requested.find("tabla") != -1):
                  print("AM: Checking Messages")
-                 tabla=BaseDatos()
+                 tabla=BaseDatos(self.modep)
                  response_content = tabla.consulta(self.userR)
              elif (file_requested.find("registro") != -1):
                  print("AM: Register")
@@ -300,34 +300,34 @@ class Server:
 def LoRaRec(data,socket,source_address):
     bandera=0
     mensaje = b""
-    tabla=BaseDatos()
+    tabla=BaseDatos(mode_print)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
     print("DEBUG: Content in reception LoRa",data)
-    if(self.modep==1): print("DEBUG: Source Address in LoRaRec ", source_address)
+    if(mode_print==1): print("DEBUG: Source Address in LoRaRec ", source_address)
     if (source_address == ANY_ADDR):
         content2 = str(data) #Capturing the data, and changing the format
         IPlora,user_raw = content2.split(",")
         if(IPlora=="b'FFFFFFFraspbsend'") or (IPlora==b'FFFFFFFraspberry'):
-            if(self.modep==1): print("DEBUG: It's the raspberry IP")
-        if(self.modep==1): print("DEBUG: IP Lora: ",str(IPlora))
+            if(mode_print==1): print("DEBUG: It's the raspberry IP")
+        if(mode_print==1): print("DEBUG: IP Lora: ",str(IPlora))
         lenght = len(user_raw)
         userf = user_raw[:lenght-1]
         if(userf=="broadcast"): #Message to all users
             message_broadcast = str(IPlora[2:])
             tabla=BaseDatos()
-            if(self.modep==1): print("DEBUG: Message Broadcast received",message_broadcast)
+            if(mode_print==1): print("DEBUG: Message Broadcast received",message_broadcast)
             posthandler.broadcast(message_broadcast) #Function to save the broadcast message
         IPloraf = IPlora[4:]
-        if(self.modep==1): print("DEBUG: User ", userf)
+        if(mode_print==1): print("DEBUG: User ", userf)
         bandera=posthandler.consultat(userf) #Checking if the user is in the database
         #bandera=tabla.consultaControl(userf)
-        if(self.modep==1): print("DEBUG: Flag ", bandera)
+        if(mode_print==1): print("DEBUG: Flag ", bandera)
         if bandera == 1: #The user is in the database, I'm going to respond
-            if(self.modep==1): print("DEBUG: Lora Address ", IPloraf)
+            if(mode_print==1): print("DEBUG: Lora Address ", IPloraf)
             sent, retrans,sent = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf)#Function to send a LoRa Message using the protocol
     elif(source_address== my_lora_address[8:]): #The message is for me, I'm going to save it
         message_raw = data
-        if(self.modep==1): print("DEBUG: message in server", message_raw)
+        if(mode_print==1): print("DEBUG: message in server", message_raw)
         if(message_raw !=b""):
             mensajet = str(message_raw)
             idEmisor, messagef,user_final = mensajet.split(",")
@@ -365,9 +365,9 @@ gc.enable()
 gc.collect()
 mode_print=choose_mode()#Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
 if(mode_print==1):print("mem_free: ", gc.mem_free())
-sd = SD()
-os.mount(sd, '/sd')
-if(mode_print==1):print("SD Card Enabled")
+#sd = SD()
+#os.mount(sd, '/sd')
+#if(mode_print==1):print("SD Card Enabled")
 #Starting LoRa
 lora = LoRa(mode=LoRa.LORA,
         frequency=freq,         
@@ -393,8 +393,6 @@ wlan.init(mode=WLAN.STA_AP, ssid=lopy_name, auth=None, channel=7, antenna=WLAN.I
 if(mode_print==1 or mode_print==2 or mode_print==3):print("Network Name: "+str(lopy_name))
 print ("Starting web server")
 tabla=BaseDatos(mode_print) #Instanciamiento Clase Base de Datos
-#tabla.set_mode(1)
-#mode=tabla.get_mode()
 s = Server(80,mode_print)  # construct server object
 s.activate_server() # Acquire the socket
 s.connectionLoRa() #Acquire Socket LoRa

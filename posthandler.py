@@ -117,7 +117,7 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast):
     return mensaje,m_broadcast
 
 def run(post_body,socket,mac,sender,flag_broadcast):
-    tabla=BaseDatos()
+    tabla=BaseDatos(1)
     ufun.set_led_to(BLUE)
     dest_lora_address =b""
     # PM: extracting data to be sent from passed POST body 
@@ -173,11 +173,10 @@ def broadcast(message):#Function to save a broadcast message
     print("received")
 
 def consultat(user):
-    tabla=BaseDatos()
+    tabla=BaseDatos(1)
     bandera=tabla.consultaControl(user)
-    tabla.set_mode()
-    mode=tabla.get_mode()
-    choose_mode()
+    #mode=tabla.get_mode()
+    #choose_mode()
     print("Consulta")
     #bandera=1
     return bandera

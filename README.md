@@ -10,7 +10,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-####In the lopy device
+###In the lopy device
 
 This is the basic information required to set up a suitable development environment for a Pycom device, in this case the LoPys.
 
@@ -18,8 +18,8 @@ You first need to have Python 3 and Pip 3 installed in your computer. Check here
 ```
 https://www.python.org/download/releases/3.0/
 
-$ install python3
-$ install python3-pip
+$ sudo apt install python3
+$ sudo apt install python3-pip
 ```
 
 Install the software required to connect to the LoPy device
