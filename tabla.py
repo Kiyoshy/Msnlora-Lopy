@@ -82,7 +82,7 @@ class BaseDatos:
 		self.message_number=self.n
 		if(self.message_number==10):
 			print("Saving Databases")
-			#x = save_backup(self.BaseU,self.BaseM)
+			x = save_backup(self.BaseU,self.BaseM)
 			self.message_number=0
 
 
@@ -111,6 +111,7 @@ class BaseDatos:
 			r_content += "<h1>Broadcast Messages</h1>\n"
 			r_content += str(self.BaseB)+" , \n"
 			r_content += "<p><a href='/registro'>Back to home</a></p>\n"
+			self.BaseM[posicion]={}
 		else:
 			r_content = "<h1>No Messages</h1>\n"
 			r_content += "\n"

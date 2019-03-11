@@ -17,6 +17,9 @@ import binascii
 
 
 DEBUG_MODE = True
+VERBOSE_MODE = False
+NORMAL_MODE = False
+
 
 #
 # BEGIN: Utility functions
@@ -77,12 +80,28 @@ def debug_printpacket(msg, packet, cont=False):
 def timeout(signum, frame):
     raise socket.timeout
 
+def choose_mode(mode):   #Execution mode assignment
+    if mode == 1:
+        DEBUG_MODE=True
+        VERBOSE_MODE=False
+        NORMAL_MODE=False
+    elif mode == 2:
+        DEBUG_MODE=False
+        VERBOSE_MODE=True
+        NORMAL_MODE=False
+    elif mode == 3:
+        DEBUG_MODE=False
+        VERBOSE_MODE=False
+        NORMAL_MODE=True
+    return DEBUG_MODE, VERBOSE_MODE, NORMAL_MODE
+
 #
 # END: Utility functions
 #
 
-def tsend(payload, the_sock, SND_ADDR, RCV_ADDR):
+def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
 
+    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=choose_mode(mode)
     # Shortening addresses to save space in packet
     if DEBUG_MODE: print("RCV_ADDR", RCV_ADDR)
     #print("RCV_ADDR")

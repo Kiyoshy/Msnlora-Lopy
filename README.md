@@ -24,7 +24,7 @@ $ sudo apt install python3-pip
 
 Install the software required to connect to the LoPy device
 ```
-$ python3 -m pip install mpy-repl-tool
+$ sudo python3 -m pip install mpy-repl-tool
 ```
 
 For more information you can check the full [documentation](https://docs.pycom.io/)
@@ -39,17 +39,17 @@ To install the repository in the LoPy device, open a terminal on the project's l
 
 Verify if the device has been recognized:
 ```
-$ python3 -m there detect
+$ sudo python3 -m there detect
 ```
 
 Confirm that the device only contains the main.py and boot.py files:
 ```
-$ python3 -m there ls -l /flash/ *
+$ sudo python3 -m there ls -l /flash/ *
 ```
 
 If the device contains more files, it must be formatted (otherwise, go to the next step) type:
 ```
-$ python3 -m there -i
+$ sudo python3 -m there -i
 	>>> import os
     >>> os.mkfs ("/flash"
     >>> Crtl + AltGr + ]
@@ -57,12 +57,12 @@ $ python3 -m there -i
 
 Upload the files of the repository to the device:
 ```
-$ python3 -m there push * /flash
+$ sudo python3 -m there push * /flash
 ```
 
 Get access to the REPL prompt:
 ```
-$ python3 -m there -i
+$ sudo python3 -m there -i
 ```
 
 ## Deployment
