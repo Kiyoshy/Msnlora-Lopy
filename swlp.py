@@ -14,6 +14,7 @@ import sys
 import time
 import hashlib
 import binascii
+import gc
 
 
 DEBUG_MODE = True
@@ -112,7 +113,7 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
     #print("RCV_ADDR2")
     #print(RCV_ADDR)
     # identify session with a number between 0 and 255: NOT USED YET
-    sessnum = machine.rng() & 0xFF  
+    sessnum = machine.rng() & 0xFF
 
     # Initialize counters et al
     seqnum = 0
@@ -149,7 +150,7 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
             try:
 
                 # waiting for a ack
-                if DEBUG_MODE: print("SND_ADDR", SND_ADDR)
+                if DEBUG_MODE: print("DEBUG Swlp: SND_ADDR", SND_ADDR)
                 ack = the_sock.recv(HEADER_SIZE)
                 recv_time = time.time()
 
@@ -158,8 +159,9 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                 if (ack_seqnum == 0 and bandera ==0):
                     rcv2 = ack_source_addr
                     bandera = 1
-                if DEBUG_MODE: debug_printpacket("received ack", ack)
-                print(str(ack_source_addr))
+                if DEBUG_MODE: 
+                    debug_printpacket("received ack", ack)
+                    print(str(ack_source_addr))
                 if ack_final: break 
 
                 # If valid, here we go!
@@ -206,15 +208,16 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                 packet = make_packet(SND_ADDR, RCV_ADDR, seqnum, acknum, DATA_PACKET, last_pkt, text)
                 the_sock.send(packet)
                 flagn +=1
-                if DEBUG_MODE: debug_printpacket("re-sending packet: ", packet)
-                if DEBUG_MODE: print("From Swlp Flag Number: ", flagn)
+                if DEBUG_MODE: 
+                    debug_printpacket("re-sending packet: ", packet)
+                    print("From Swlp Flag Number: ", flagn)
                 sent += 1
                 retrans += 1
                 if(flagn==3):   #AM: Para no dejar el socket colgado se pone un reenvio de 3 paquetes
                     dentro= True
                     break
 
-    print("RETURNING tsend")        
+    if DEBUG_MODE: print("RETURNING tsend")        
     return(sent,retrans,sent)
 
 #
@@ -294,7 +297,8 @@ def trecv(the_sock, MY_ADDR, SND_ADDR):
     return rcvd_data
 
 #Trecv no persistent
-def trecvcontrol(the_sock, MY_ADDR, SND_ADDR):
+def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
+    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=choose_mode(mode)
     flag_recv = False
     # Shortening addresses to save space in packet
     MY_ADDR = MY_ADDR[8:]
@@ -309,7 +313,7 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR):
     while True:
         try:
             # Receive any packet
-            if DEBUG_MODE: print("DEBUG: From Swlp My Address: ", MY_ADDR)
+            if DEBUG_MODE: print("DEBUG Swlp: From Swlp My Address: ", MY_ADDR)
             packet = the_sock.recv(MAX_PKT_SIZE)
             if DEBUG_MODE: print("Content received", packet)
             source_addr, dest_addr, seqnum, acknum, ack, last_pkt, check, content = unpack(packet)
@@ -342,7 +346,7 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR):
         the_sock.send(ack_segment)
         if DEBUG_MODE: debug_printpacket("sent 1st ACK", ack_segment)
         if(source_addr==b'raspberr') or (source_addr==b'aspberry'):
-            if DEBUG_MODE: print("DEBUG: Sending again because it's a raspberry")
+            if DEBUG_MODE: print("DEBUG Swlp: Sending again because it's a raspberry")
             time.sleep(1)
             the_sock.send(ack_segment)
         if not last_pkt:
@@ -354,8 +358,9 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR):
                     source_addr, dest_addr, seqnum, acknum, ack, last_pkt, check, content = unpack(packet)
                     dest_addra=str(dest_addr)
                     dest_addr2=dest_addra[2:(len(dest_addra)-1)]
-                    if DEBUG_MODE: print("DEBUG: dest_addr",dest_addra)
-                    if DEBUG_MODE: print("DEBUG: MY_ADDR",MY_ADDR)
+                    if DEBUG_MODE: 
+                        print("DEBUG Swlp: dest_addr",dest_addra)
+                        print("DEBUG Swlp: MY_ADDR",MY_ADDR)
                     if (dest_addr==MY_ADDR):
                         if DEBUG_MODE: debug_printpacket("received packet", packet, True)
                         break
@@ -374,7 +379,7 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR):
                 the_sock.send(ack_segment)
                 if DEBUG_MODE: debug_printpacket("sending ACK", ack_segment)
                 if(source_addr==b'raspberr'):
-                    if DEBUG_MODE: print("DEBUG: Sending again because it's a raspberry")
+                    if DEBUG_MODE: print("DEBUG Swlp: Sending again because it's a raspberry")
                     time.sleep(1)
                     the_sock.send(ack_segment)
                 if last_pkt:

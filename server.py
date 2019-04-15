@@ -49,7 +49,8 @@ tx_iq_inv=False                 # def.: tx_iq=false
 rx_iq_inv=False                 # def.: rx_iq=false                 
 ada_dr=False                    # def.: adr=false                   
 pub=False                       # def.: public=true                 
-tx_retr=1                       # def.: tx_retries=1                
+tx_retr=1                       # def.: tx_retries=1
+region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4         
 dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A   
 flag_mode=0
 
@@ -130,21 +131,22 @@ class Server:
      h += 'Date: ' + current_date +'\n'
      h += 'Server: Simple-Python-HTTP-Server\n'
      h += 'Connection: close\n\n'  # signal that the conection will be closed after completing the request
-
      return h
 
  def _wait_for_connections(self,s_left,addr,treq):
      #determine request method  (HEAD and GET are supported) (PM: added support to POST )
      request_method = treq.split(' ')[0]
-     print ("Method: ", request_method)
-     print ("Full HTTP message: -->")
-     print (treq)
-     print ("<--")
+     if(self.modep==1):
+        print ("Method: ", request_method)
+        print ("Full HTTP message: -->")
+        print (treq)
+        print ("<--")
      treqhead = treq.split("\r\n\r\n")[0]
      treqbody = treq[len(treqhead):].lstrip() # PM: makes easier to handle various types of newlines
-     print ("only the HTTP body: -->")
-     print (treqbody)
-     print ("<--")
+     if(self.modep==1):
+        print ("only the HTTP body: -->")
+        print (treqbody)
+        print ("<--")
 
          # split on space "GET /file.html" -into-> ('GET','file.html',...)
      file_requested = treq.split(' ')
@@ -162,14 +164,14 @@ class Server:
              file_requested = '/index.html' # ...giving them index.html instead
      
      file_requested = self.www_dir + file_requested
-     print ("Serving web page [",file_requested,"]")
+     if(self.modep==1):print ("Serving web page [",file_requested,"]")
 
 # GET method
      if (request_method == 'GET') | (request_method == 'HEAD') :
     ## Load file content
          try:
              gc.collect()
-             print("mem_free: ", gc.mem_free())
+             if (self.modep==1): print("mem_free: ", gc.mem_free())
              if(request_method=='GET' and file_requested=='/flash/registro'):
                  if (self.modep==1): print('Regreso del Usuario',self.userR)
                  tabla=BaseDatos(self.modep)
@@ -199,7 +201,7 @@ class Server:
          if (request_method == 'GET'):
             server_response +=  response_content  # return additional conten for GET only
          s_left.send(server_response)
-         print ("Closing connection with client")
+         if(self.modep==1):print ("Closing connection with client")
          ufun.set_led_to(OFF)
          s_left.close()
 
@@ -208,38 +210,47 @@ class Server:
              ## Load file content
          try:
              if (file_requested.find("execposthandler") != -1):
-                 print("... PM: running python code")
-                 if(self.modep==1): print("DEBUG: lenght message:",len(treqbody))
+                 if(self.modep==1):
+                    print("... PM: running python code")
+                    print("DEBUG Server: lenght message:",len(treqbody))
                  if (len(treqbody) > 25):
                      response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
                  else:
-	                 print("... PM: empty POST received")
+	                 if(self.modep==1):print("... PM: empty POST received")
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-             elif (file_requested.find("tabla") != -1):
-                 print("AM: Checking Messages")
+             elif (file_requested.find("tabla") != -1):                 
+                 if (self.modep==1):print("AM: Checking Messages")
+                 if (self.modep==2): print("Checking Messages")
+                 if (self.modep==3): print("Checking messages")
+                 gc.collect()
                  tabla=BaseDatos(self.modep)
                  response_content = tabla.consulta(self.userR)
              elif (file_requested.find("registro") != -1):
-                 print("AM: Register")
-                 if(self.modep==1): print("DEBUG: lenght user:",len(treqbody))
-                 if(self.modep==1): print("DEBUG: treqbody:",treqbody)
+                 if(self.modep==1): 
+                    print("AM: Register")
+                    print("DEBUG Server: lenght user:",len(treqbody))
+                    print("DEBUG Server: treqbody:",treqbody)
                  tabla=BaseDatos(self.modep)
                  if (len(treqbody) > 12 ):
                      response_content,self.userR = tabla.ingresoRegistro(treqbody,0)
+                     gc.collect()
+                     #### print("mem_free: ", gc.mem_free())          #####
                      print("Register Ok")
                  else:
                      print("... PM: empty POST received")
                      response_content = b"<html><body><p>Error: Please Choose a username</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
              elif (file_requested.find("broadcast") != -1):
-                print("AM: Sending Message Broadcast")
-                tabla=BaseDatos()
-                response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,1)
+                if(self.modep==1 | self.modep==2): print("AM: Sending Message Broadcast")
+                if(self.modep==3): print("Message Broadcast sent")
+                gc.collect()
+                tabla=BaseDatos(self.modep)
+                response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,1, self.modep)
              elif (file_requested.find("telegram") != -1):
                 print("AM: Telegram Message")
-                tabla=BaseDatos()
-                if(self.modep==1): print("DEBUG: lenght message:",len(treqbody))
+                tabla=BaseDatos(self.modep)
+                if(self.modep==1): print("DEBUG Server: lenght message:",len(treqbody))
                 if (len(treqbody) > 25):
-                    response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,2)
+                    response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,2, self.modep)
                 else:
                     print("... AM: empty POST received")
                     response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
@@ -258,7 +269,7 @@ class Server:
          server_response =  response_headers.encode() # return headers
          server_response +=  response_content  # return additional content
          s_left.send(server_response)
-         print ("Closing connection with client")
+         if(self.modep==1):print ("Closing connection with client")
          ufun.set_led_to(OFF)
          s_left.close()
 
@@ -267,11 +278,11 @@ class Server:
  
  def checking_connection(self,s_left,addr):
     data=""
-    print("Got connection from:", addr)
+    if(self.modep==1):print("Got connection from:", addr)
     data = s_left.recv(1024) #receive data from client
-    if(self.modep==1): print("DEBUG: Data received:",data)
+    if(self.modep==1): print("DEBUG Server: Data received:",data)
     if(data==b""):
-        print("Null Method, Discarding")
+        if(self.modep==1 | self.modep==2): print("Null Method, Discarding")
     else:
         treq = bytes.decode(data)
         self._wait_for_connections(s_left,addr,treq)
@@ -283,17 +294,18 @@ class Server:
         for a in s_read:
             if a == self.socket:
                 # reading data from the HTTP channel
-                if(self.modep==1):("DEBUG: in connections_handler: reading data from the HTTP channel")
+                if(self.modep==1):("DEBUG Server: in connections_handler: reading data from the HTTP channel")
                 s_left, addr = self.socket.accept()
                 self.checking_connection(s_left,addr)
             elif a == self.s_right:
                 # reading data from the LORA channel using swlpv3
-                print("DEBUG: reading data from the LORA channel using swlpv3")
+                if(self.modep==1): print("DEBUG Server: reading data from the LORA channel using swlpv3")
                 ufun.flash_led_to(YELLOW)
-                data,sender = swlp.trecvcontrol(self.s_right, my_lora_address, ANY_ADDR)
+                data,sender = swlp.trecvcontrol(self.s_right, my_lora_address, ANY_ADDR, self.modep)
                 LoRaRec(data,self.s_right,sender)
-                if(self.modep==1): print("DEBUG: done reading data from the LORA channel using swlpv3:",data)
-                if(self.modep==1): print("The End")
+                if(self.modep==1): 
+                    print("DEBUG Server: done reading data from the LORA channel using swlpv3:",data)
+                    print("The End")                
                 ufun.flash_led_to(OFF)
 ###################################################################################
 
@@ -302,38 +314,41 @@ def LoRaRec(data,socket,source_address):
     mensaje = b""
     tabla=BaseDatos(mode_print)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
-    print("DEBUG: Content in reception LoRa",data)
-    if(mode_print==1): print("DEBUG: Source Address in LoRaRec ", source_address)
+    if(mode_print==1): 
+        print("DEBUG Server: Content in reception LoRa",data)
+        print("DEBUG Server: Source Address in LoRaRec ", source_address)
     if (source_address == ANY_ADDR):
         content2 = str(data) #Capturing the data, and changing the format
         IPlora,user_raw = content2.split(",")
         if(IPlora=="b'FFFFFFFraspbsend'") or (IPlora==b'FFFFFFFraspberry'):
-            if(mode_print==1): print("DEBUG: It's the raspberry IP")
-        if(mode_print==1): print("DEBUG: IP Lora: ",str(IPlora))
+            if(mode_print==1): print("DEBUG Server: It's the raspberry IP")
+        if(mode_print==1): print("DEBUG Server: IP Lora: ",str(IPlora))
         lenght = len(user_raw)
         userf = user_raw[:lenght-1]
         if(userf=="broadcast"): #Message to all users
             message_broadcast = str(IPlora[2:])
-            tabla=BaseDatos()
-            if(mode_print==1): print("DEBUG: Message Broadcast received",message_broadcast)
+            tabla=BaseDatos(mode_print)
+            if(mode_print==1): print("DEBUG Server: Message Broadcast received",message_broadcast)
             posthandler.broadcast(message_broadcast, mode_print) #Function to save the broadcast message
         IPloraf = IPlora[4:]
-        if(mode_print==1): print("DEBUG: User ", userf)
+        if(mode_print==1): print("DEBUG Server: User ", userf)
         bandera=posthandler.consultat(userf, mode_print) #Checking if the user is in the database
         #bandera=tabla.consultaControl(userf)
-        if(mode_print==1): print("DEBUG: Flag ", bandera)
+        if(mode_print==1): print("DEBUG Server: Flag ", bandera)
         if bandera == 1: #The user is in the database, I'm going to respond
-            if(mode_print==1): print("DEBUG: Lora Address ", IPloraf)
-            sent, retrans,sent = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf, mode_print)#Function to send a LoRa Message using the protocol
+            if(mode_print==1): print("DEBUG Server: Lora Address ", IPloraf)
+            sent, retrans, sent = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf, mode_print)#Function to send a LoRa Message using the protocol
     elif(source_address== my_lora_address[8:]): #The message is for me, I'm going to save it
         message_raw = data
-        if(mode_print==1): print("DEBUG: message in server", message_raw)
+        if(mode_print==1): print("DEBUG Server: message in server", message_raw)
+        if (mode_print==2): print("Receiving message")
         if(message_raw !=b""):
             mensajet = str(message_raw)
             idEmisor, messagef,user_final = mensajet.split(",")
-            print("Sender: "+str(idEmisor[1:]))
-            print("Message: "+str(messagef))
-            print("User: "+str(user_final))
+            if (mode_print==2):
+                print("Sender: "+str(idEmisor[1:]))
+                print("Message: "+str(messagef))
+                print("User: "+str(user_final))
             lenght = len(user_final)
             userf = user_final[:lenght-1]
             tabla.ingreso(idEmisor[2:],userf,messagef)#Function to save the message in the database
@@ -361,9 +376,9 @@ def choose_mode():   #Execution mode assignment
 
 
 # Enabling garbage collection
+mode_print=choose_mode()#Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
 gc.enable()
 gc.collect()
-mode_print=choose_mode()#Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
 if(mode_print==1):print("mem_free: ", gc.mem_free())
 sd = SD()
 os.mount(sd, '/sd')
@@ -381,7 +396,8 @@ lora = LoRa(mode=LoRa.LORA,
         rx_iq=rx_iq_inv,                
         adr=ada_dr,                  
         public=pub,       
-        tx_retries=tx_retr,              
+        tx_retries=tx_retr,
+        region=LoRa.EU868,              
         device_class=dev_class)
 # AM: Se configura la lopy como punto de Acceso y servidor HTTP
 my_lora_address = binascii.hexlify(network.LoRa().mac())

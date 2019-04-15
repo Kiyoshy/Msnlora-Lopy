@@ -4,6 +4,7 @@ import time
 from socket import *
 import swlp
 import os
+import gc
 from machine import SD
 
 
@@ -34,13 +35,13 @@ class BaseDatos:
 			for i in blks:
 				v = i.split("=")
 				tbs += ","+v[1]
-			print("tbs",tbs)
+			if(self.modep==1):print("tbs",tbs)
 			x=tbs.split(",")
-			if(self.modep==1):print("DEBUG: data from the form: ", x)
+			if(self.modep==1):print("DEBUG Tabla: data from the form: ", x)
 			user=x[1]
 		else:
 			user=usuario
-		if self.modep==1: print("DEBUG: User: ", user)
+		if self.modep==1: print("DEBUG Tabla: User: ", user)
 		if user in self.BaseU:
 			posicion=self.BaseU.index(user)
 		else:
@@ -48,8 +49,8 @@ class BaseDatos:
 			self.BaseM.append(user)
 			posicion=self.BaseU.index(user)
 			self.BaseM[posicion]={}	
-		if self.modep==1: print("DEBUG: Position: ", posicion)
-		if self.modep==1: print("DEBUG: User Database: ", self.BaseU)
+		if self.modep==1: print("DEBUG Tabla: Position: ", posicion)
+		if self.modep==1: print("DEBUG Tabla: User Database: ", self.BaseU)
 		r_content='<head><meta charset="utf-8"><title>Register LoRa</title>\n'
 		r_content +='<style type="text/less">\n'
 		r_content +=".dropdown-toggle {display:none;}\n"
@@ -67,18 +68,22 @@ class BaseDatos:
 
 	def ingreso(self,Emisor,destino,Mensaje): #AM: Function to save the messages
 		print("Saving Message")
-		if self.modep==1: print("DEBUG: Number of Message: ", self.message_number)
+		if self.modep==1: print("DEBUG Tabla: Number of Message: ", self.message_number)
+		if self.modep==2: print("Reception OK")
+		if self.modep==3: print("Message received")
 		BaseDatos.n+=1
-		if self.modep==1: print("DEBUG: Number of Message: ", self.n)
-		if self.modep==1: print("DEBUG: Message Database: ", self.BaseM)
-		if self.modep==1: print("DEBUG: User Database: ", self.BaseU)
+		if self.modep==1: 
+			print("DEBUG Tabla: Number of Message: ", self.n)
+			print("DEBUG Tabla: Message Database: ", self.BaseM)
+			print("DEBUG Tabla: User Database: ", self.BaseU)
 		posicion=self.BaseU.index(destino)
-		if self.modep==1: print("DEBUG: Position: ", posicion)
+		if self.modep==1: print("DEBUG Tabla: Position: ", posicion)
 		self.BaseM[posicion][str(self.n)+"Emisor "]=Emisor
 		self.BaseM[posicion][str(self.n)+"Mensaje "]=Mensaje
-		if self.modep==1: print("DEBUG: New Users Database: ", self.BaseU)
-		if self.modep==1: print("DEBUG: New Message Database: ", self.BaseM)
-		if self.modep==1: print("DEBUG: Number of Message: ", self.n)
+		if self.modep==1: 
+			print("DEBUG Tabla: New Users Database: ", self.BaseU)
+			print("DEBUG Tabla: New Message Database: ", self.BaseM)
+			print("DEBUG Tabla: Number of Message: ", self.n)
 		self.message_number=self.n
 		if(self.message_number==10):
 			print("Saving Databases")
@@ -87,7 +92,7 @@ class BaseDatos:
 
 
 	def consultaControl(self,destino):
-		if self.modep==1: print("DEBUG: User Database: ", self.BaseU)
+		if self.modep==1: print("DEBUG Tabla: User Database: ", self.BaseU)
 		bandera = 0
 		if destino in self.BaseU: # AM: Checking if the user is in the database
 			bandera = 1
@@ -96,12 +101,12 @@ class BaseDatos:
 		return bandera
 
 	def consulta(self,user):
-		if self.modep==1: print("DEBUG: User: ", user)
+		if self.modep==1: print("DEBUG Tabla: User: ", user)
 		BaseUConsulta = self.BaseU
-		if self.modep==1: print("DEBUG: User Database: ", BaseUConsulta)
+		if self.modep==1: print("DEBUG Tabla: User Database: ", BaseUConsulta)
 		BaseMConsulta = self.BaseM
 		posicion=BaseUConsulta.index(user)
-		if self.modep==1: print("DEBUG: Messages: ", BaseMConsulta[posicion])
+		if self.modep==1: print("DEBUG Tabla: Messages: ", BaseMConsulta[posicion])
 		if (BaseMConsulta[posicion]!={}):
 			r_content = "<h1>Messages sent via LoRa</h1>\n"
 			r_content += "\n"
@@ -119,12 +124,14 @@ class BaseDatos:
 			r_content += "<h1>Broadcast Messages</h1>\n"
 			r_content += str(self.BaseB)+" , \n"
 			r_content += "<p><a href='/registro'>Back to home</a></p>\n"
-		if self.modep==1: print("DEBUG: r_content", r_content)
+		if self.modep==1: print("DEBUG Tabla: r_content", r_content)
 		return r_content
 
 	def broadcast_message(self,message):
 		self.BaseB.append(message)
-		print("Message Broadcast Saved")
+		if self.modep==1: print("DEBUG Tabla: Message Broadcast Saved")
+		if self.modep==2: print("Message Broadcast Received")
+		if self.modep==3: print ("Message broadcast received")
 
 ################################################################################################################
 #Management of the data in the SD Card

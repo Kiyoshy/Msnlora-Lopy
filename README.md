@@ -47,11 +47,11 @@ Confirm that the device only contains the main.py and boot.py files:
 $ sudo python3 -m there ls -l /flash/ *
 ```
 
-If the device contains more files, it must be formatted (otherwise, go to the next step) type:
+If the device contains more files, it must be formatted type (otherwise, go to the next step):
 ```
 $ sudo python3 -m there -i
 	>>> import os
-    >>> os.mkfs ("/flash"
+    >>> os.mkfs ("/flash")
     >>> Crtl + AltGr + ]
 ```
 

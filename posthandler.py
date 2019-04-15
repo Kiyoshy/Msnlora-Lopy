@@ -9,6 +9,7 @@ import struct
 import ufun
 from tabla import BaseDatos #AM: Libreria Bases de Usuarios y mensajes
 import utime
+import gc
 
 ANY_ADDR = b'FFFFFFFFFFFFFFFF'
 MAX_PKT_SIZE_REC = 32  # Must determine which is the maximum pkt size in LoRa...
@@ -40,7 +41,8 @@ tx_iq_inv=False                 # def.: tx_iq=false
 rx_iq_inv=False                 # def.: rx_iq=false                 
 ada_dr=False                    # def.: adr=false                   
 pub=False                       # def.: public=true                 
-tx_retr=1                       # def.: tx_retries=1                
+tx_retr=1                       # def.: tx_retries=1
+region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4
 dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 
 # AM: subpacket creation not implemented
@@ -82,7 +84,8 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
         rx_iq=rx_iq_inv,                
         adr=ada_dr,                  
         public=pub,       
-        tx_retries=tx_retr,              
+        tx_retries=tx_retr,
+        region=LoRa.EU868,          
         device_class=dev_class)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
     dest_lora_address = b'FFFFFFFFFFFFFFFF'
@@ -91,12 +94,14 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
         content=message+","+str(tbs)
     else:
         content=str(str(my_lora_address)+","+str(tbs))
-    if DEBUG_MODE: print("DEBUG Posthandler: Content: ", content)
-    if DEBUG_MODE: print("DEBUG Posthandler: Searching: ", tbs)
+    if DEBUG_MODE:
+        print("DEBUG Posthandler: Content: ", content)
+        print("DEBUG Posthandler: Searching: ", tbs)
     # AM: We wait 20 seconds for the user
     while True:
         if(tbs=="broadcast"):#We check if the message is broadcast
             if DEBUG_MODE: print("DEBUG Posthandler: Sending Message broadcast")
+            if VERBOSE_MODE: print("Sending Message Broadcast")
             sent,retrans,nsent = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
             mensaje=b""
             m_broadcast = 1
@@ -105,15 +110,18 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
             dest_lora_address=b'FFFFFFFraspberry'
             if DEBUG_MODE: print("DEBUG Posthandler: Searching Via Telegram to: ", tbs)
         if DEBUG_MODE: print("DEBUG Posthandler: Searching: ", cuenta)
+        if VERBOSE_MODE: print("Searching Destination...")
         sent,retrans,nsent = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
-        mensaje,address = swlp.trecvcontrol(the_sock, my_lora_address, dest_lora_address)
-        if DEBUG_MODE: print("DEBUG Posthandler: Message: ", mensaje)
-        if DEBUG_MODE: print("DEBUG Posthandler: Retransmisions",retrans)
+        mensaje,address = swlp.trecvcontrol(the_sock, my_lora_address, dest_lora_address, mode)
+        if DEBUG_MODE:
+            print("DEBUG Posthandler: Message: ", mensaje)
+            print("DEBUG Posthandler: Retransmisions",retrans)
         cuenta+=1
         if(mensaje!=b""): #We found the user receiver
             break
         elif(cuenta==3 and mensaje==b""):
             if DEBUG_MODE: print("DEBUG Posthandler: Message when destination not found: ", mensaje)
+            if (VERBOSE_MODE | NORMAL_MODE): print("Destination not found")
             break
     return mensaje,m_broadcast
 
@@ -138,17 +146,24 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
     dest_lora_address, m_broadcast = reconocimiento(socket,receiver,message,flag_broadcast, mode)#Function to look for the user
     search_time = utime.ticks_ms() - start_search_time
     dest_lora_address2 = dest_lora_address[2:]
-    if DEBUG_MODE: print("DEBUG Posthandler: dest lora address: ", dest_lora_address2)
-    if DEBUG_MODE: print("DEBUG Posthandler: Search Destination time: %0.10f mseconds."% search_time)
+    if DEBUG_MODE:
+        print("DEBUG Posthandler: dest lora address: ", dest_lora_address2)
+        print("DEBUG Posthandler: Search Destination time: %0.10f mseconds."% search_time)
     if(dest_lora_address != b""):
         start_time = utime.ticks_ms()
         aenvio = str(sender)+","+str(message)+","+str(receiver) # AM: When you know where to send the message
         if DEBUG_MODE: print("DEBUG Posthandler: Payload to be sent: ", aenvio)
+        if VERBOSE_MODE: 
+            print("Destination found")
+            print("Sending message")
         sent, retrans,sent = swlp.tsend(aenvio, socket, mac, dest_lora_address, mode)
         elapsed_time = utime.ticks_ms() - start_time
-        if DEBUG_MODE: print("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
-        if DEBUG_MODE: print("DEBUG Posthandler: Retransmisions",retrans)
-        if DEBUG_MODE: print("DEBUG Posthandler: Segments sent:",sent)
+        if DEBUG_MODE:
+            print("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
+            print("DEBUG Posthandler: Retransmisions",retrans)
+            print("DEBUG Posthandler: Segments sent:",sent)
+        if VERBOSE_MODE: print("Sent OK")
+        if NORMAL_MODE: print("Message sent")
         ufun.set_led_to(OFF)
         # PM: creating web page to be returned
         r_content = "<h1>Message sent via LoRa</h1>\n"
@@ -172,13 +187,14 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
 def broadcast(message, mode):#Function to save a broadcast message
     tabla=BaseDatos(mode)
     tabla.broadcast_message(message)
-    print("received")
+    if DEBUG_MODE: print("received")
+    if (VERBOSE_MODE | NORMAL_MODE): print ("Posthandler: Message Broadcast received")
 
 def consultat(user, mode):
     tabla=BaseDatos(mode)
     bandera=tabla.consultaControl(user)
     #mode=tabla.get_mode()
     #choose_mode()
-    print("Consulta")
+    if DEBUG_MODE: print("Consulta")
     #bandera=1
     return bandera
