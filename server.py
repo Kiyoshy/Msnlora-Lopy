@@ -345,7 +345,7 @@ def LoRaRec(data,socket,source_address):
         if(message_raw !=b""):
             mensajet = str(message_raw)
             idEmisor, messagef,user_final = mensajet.split(",")
-            if (mode_print==2):
+            if (mode_print==1):
                 print("Sender: "+str(idEmisor[1:]))
                 print("Message: "+str(messagef))
                 print("User: "+str(user_final))

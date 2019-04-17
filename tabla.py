@@ -69,8 +69,6 @@ class BaseDatos:
 	def ingreso(self,Emisor,destino,Mensaje): #AM: Function to save the messages
 		print("Saving Message")
 		if self.modep==1: print("DEBUG Tabla: Number of Message: ", self.message_number)
-		if self.modep==2: print("Reception OK")
-		if self.modep==3: print("Message received")
 		BaseDatos.n+=1
 		if self.modep==1: 
 			print("DEBUG Tabla: Number of Message: ", self.n)
@@ -85,6 +83,8 @@ class BaseDatos:
 			print("DEBUG Tabla: New Message Database: ", self.BaseM)
 			print("DEBUG Tabla: Number of Message: ", self.n)
 		self.message_number=self.n
+		if self.modep==2: print("Reception OK")
+		if self.modep==3: print(destino + " " + "has a new message")
 		if(self.message_number==10):
 			print("Saving Databases")
 			x = save_backup(self.BaseU,self.BaseM)
@@ -131,7 +131,7 @@ class BaseDatos:
 		self.BaseB.append(message)
 		if self.modep==1: print("DEBUG Tabla: Message Broadcast Saved")
 		if self.modep==2: print("Message Broadcast Received")
-		if self.modep==3: print ("Message broadcast received")
+		if self.modep==3: print ("You've received a new broadcast message")
 
 ################################################################################################################
 #Management of the data in the SD Card
