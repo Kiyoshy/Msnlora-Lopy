@@ -6,7 +6,7 @@ Based on https://github.com/gie-sakura/msnlora
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy. This version is capable of transmitting 100000KB.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy. This version is capable of transmitting 100KB.
 
 ### Prerequisites
 
