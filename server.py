@@ -3,7 +3,8 @@
 # PM: based on http://blog.wachowicz.eu/?p=256
 # PM: added POST handling
 # import signal  # Signal support (server shutdown on signal receive)
-# KN: Agregado conexión a red local, modo de ejecución del servidor
+# KN: Added connection to local network, server execution mode
+# KN: Added support for 100000KB
 # AM: Agregado funcionamiento entre dos dispositivos
 
 import socket  # Networking support
@@ -55,6 +56,7 @@ dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 flag_mode=0
 
 class Server:
+    #print("---SERVER---CLASS SERVER---")
  """ Class describing a simple HTTP server objects."""
 
  def __init__(self, port, mode):
@@ -116,7 +118,6 @@ class Server:
 
  def _gen_headers(self, code):
      """ Generates HTTP response Headers. """
-
      # determine response code
      h = ''
      if (code == 200):
@@ -125,8 +126,8 @@ class Server:
         h = 'HTTP/1.1 404 Not Found\n'
 
      # write further headers
-#     current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-# PM: should find an alternative for LoPys
+     # current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+     # PM: should find an alternative for LoPys
      current_date = '4 Agosto 1965'
      h += 'Date: ' + current_date +'\n'
      h += 'Server: Simple-Python-HTTP-Server\n'
@@ -148,14 +149,14 @@ class Server:
         print (treqbody)
         print ("<--")
 
-         # split on space "GET /file.html" -into-> ('GET','file.html',...)
+     # split on space "GET /file.html" -into-> ('GET','file.html',...)
      file_requested = treq.split(' ')
-     if(self.modep==1): print("File Requested: ", file_requested)
+     if(self.modep==1): print("Debug Server: File Requested: ", file_requested)
      if(file_requested==''):
         file_requested = '/index.html'
      file_requested = file_requested[1] # get 2nd element
 
-         #Check for URL arguments. Disregard them
+     #Check for URL arguments. Disregard them
      file_requested = file_requested.split('?')[0]  # disregard anything after '?'
 
      if (file_requested == '/'):  # in case no file is specified by the browser
@@ -168,7 +169,7 @@ class Server:
 
 # GET method
      if (request_method == 'GET') | (request_method == 'HEAD') :
-    ## Load file content
+     ## Load file content
          try:
              gc.collect()
              if (self.modep==1): print("mem_free: ", gc.mem_free())
@@ -212,6 +213,7 @@ class Server:
              if (file_requested.find("execposthandler") != -1):
                  if(self.modep==1):
                     print("... PM: running python code")
+                    ####print("EL TREQBODY ES: ", str(treqbody))
                     print("DEBUG Server: lenght message:",len(treqbody))
                  if (len(treqbody) > 25):
                      response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
@@ -219,7 +221,7 @@ class Server:
 	                 if(self.modep==1):print("... PM: empty POST received")
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
              elif (file_requested.find("tabla") != -1):                 
-                 if (self.modep==1):print("AM: Checking Messages")
+                 if (self.modep==1): print("DEBUG Server: Checking Messages")
                  if (self.modep==2): print("Checking Messages")
                  if (self.modep==3): print("Checking messages")
                  gc.collect()
@@ -227,14 +229,13 @@ class Server:
                  response_content = tabla.consulta(self.userR)
              elif (file_requested.find("registro") != -1):
                  if(self.modep==1): 
-                    print("AM: Register")
+                    print("DEBUG Server: Register")
                     print("DEBUG Server: lenght user:",len(treqbody))
                     print("DEBUG Server: treqbody:",treqbody)
                  tabla=BaseDatos(self.modep)
                  if (len(treqbody) > 12 ):
                      response_content,self.userR = tabla.ingresoRegistro(treqbody,0)
                      gc.collect()
-                     #### print("mem_free: ", gc.mem_free())          #####
                      print("Register Ok")
                  else:
                      print("... PM: empty POST received")
@@ -276,11 +277,35 @@ class Server:
      else:
          print("Unknown HTTP request method:", request_method)
  
+ # KN: Function to receive all the message via TCP
  def checking_connection(self,s_left,addr):
-    data=""
-    if(self.modep==1):print("Got connection from:", addr)
-    data = s_left.recv(1024) #receive data from client
-    if(self.modep==1): print("DEBUG Server: Data received:",data)
+    
+    data=b""
+    data = s_left.recv(1024)
+
+    while True:
+        check_header = bytes.decode(data)
+        check_header_list = (check_header.split('\r\n'))  #Create list to check header
+        check_header_dict={}
+        for element in check_header_list:  #Create a dict
+            s_element= (str(element))
+            if (s_element.find(':')) != -1:
+                keyValue = element.split(': ')
+                check_header_dict[keyValue[0]]=keyValue[1]
+        content_length = int(check_header_dict.get('Content-Length', 0))     #Content lenght
+        checking_header = check_header.split("\r\n\r\n")[0]
+        checking_body = check_header[len(checking_header):].lstrip()
+        rec_body = len(checking_body)
+        r_data = content_length - rec_body
+        if (self.modep==1): print ("DEBUG Server: Remaining Body: ", r_data)
+        if r_data!=0:
+            data += s_left.recv((1024))
+            check_headerx = bytes.decode(data)
+        else:
+            if (self.modep==1): print("DEBUG Server: Data Received")
+            break
+    if(self.modep==1):print("Got connection from: ", addr)
+    if(self.modep==1): print("DEBUG Server: Data received: ",data)
     if(data==b""):
         if(self.modep==1 | self.modep==2): print("Null Method, Discarding")
     else:
@@ -290,11 +315,11 @@ class Server:
  def conexion(self): #Function in charge of the coordination of sockets
     ANY_ADDR = b'FFFFFFFFFFFFFFFF'
     while True:
-        s_read, _, _ = select.select([self.socket, self.s_right], [], [])          
+        s_read, _, _ = select.select([self.socket, self.s_right], [], [])
         for a in s_read:
             if a == self.socket:
                 # reading data from the HTTP channel
-                if(self.modep==1):("DEBUG Server: in connections_handler: reading data from the HTTP channel")
+                if(self.modep==1): print("DEBUG Server: In connections_handler: reading data from the HTTP channel")
                 s_left, addr = self.socket.accept()
                 self.checking_connection(s_left,addr)
             elif a == self.s_right:
@@ -355,7 +380,7 @@ def LoRaRec(data,socket,source_address):
 
 ################################################################################################################################
 
-def choose_mode():   #Execution mode assignment
+def choose_mode():   # KN: Execution mode assignment
     while True:
         mode = str.lower(input('Choose the execution mode ("Debug" "Verbose" "Normal"): '))
         if mode == "debug":
@@ -375,8 +400,8 @@ def choose_mode():   #Execution mode assignment
     return modemes
 
 
+mode_print=choose_mode() # Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
 # Enabling garbage collection
-mode_print=choose_mode()#Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
 gc.enable()
 gc.collect()
 if(mode_print==1):print("mem_free: ", gc.mem_free())
@@ -399,7 +424,7 @@ lora = LoRa(mode=LoRa.LORA,
         tx_retries=tx_retr,
         region=LoRa.EU868,              
         device_class=dev_class)
-# AM: Se configura la lopy como punto de Acceso y servidor HTTP
+# Se configura la lopy como punto de Acceso y servidor HTTP
 my_lora_address = binascii.hexlify(network.LoRa().mac())
 source_address = str(str(my_lora_address[8:]))
 n_network=(source_address[-4:-1])

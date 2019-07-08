@@ -47,7 +47,6 @@ dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 
 # AM: subpacket creation not implemented
 def make_subpacket(TipoMensaje, TipoPaquete, content):
-    
     Paquete = 0
     Mensaje = 0
     if TipoPaquete: Paquete = Paquete | (1<<0) #False for Audio, True for plain text
@@ -66,6 +65,7 @@ def unpack(packet):
     return TM, TP, content    
 
 def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
+
     # AM: We send a broadcast message looking for the user
     mensaje =""
     content= ""
@@ -106,7 +106,7 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
             mensaje=b""
             m_broadcast = 1
             break
-        elif(flag_broadcast==2):#When is a message via telegram
+        elif(flag_broadcast==2): #When is a message via telegram
             dest_lora_address=b'FFFFFFFraspberry'
             if DEBUG_MODE: print("DEBUG Posthandler: Searching Via Telegram to: ", tbs)
         if DEBUG_MODE: print("DEBUG Posthandler: Searching: ", cuenta)
@@ -126,6 +126,10 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
     return mensaje,m_broadcast
 
 def run(post_body,socket,mac,sender,flag_broadcast, mode):
+
+    gc.enable()
+    gc.collect()
+    print("---->mem_free: ", gc.mem_free())
     tabla=BaseDatos(mode)
     DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=swlp.choose_mode(mode)
     ufun.set_led_to(BLUE)
@@ -184,7 +188,7 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
         r_content += "<h1><a href='/registro'>Back To Home</a></h1>\n"
     return r_content
 
-def broadcast(message, mode):#Function to save a broadcast message
+def broadcast(message, mode): #Function to save a broadcast message
     tabla=BaseDatos(mode)
     tabla.broadcast_message(message)
     if DEBUG_MODE: print("received")

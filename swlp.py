@@ -21,7 +21,6 @@ DEBUG_MODE = True
 VERBOSE_MODE = False
 NORMAL_MODE = False
 
-
 #
 # BEGIN: Utility functions
 #
@@ -56,6 +55,7 @@ def make_packet(source_addr, dest_addr, seqnum, acknum, is_a_ack, last_pkt, cont
 
 # Break a packet into its component parts
 def unpack(packet):
+
     header  = packet[:HEADER_SIZE]
     content = packet[HEADER_SIZE:]
 
@@ -105,13 +105,9 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
     DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=choose_mode(mode)
     # Shortening addresses to save space in packet
     if DEBUG_MODE: print("RCV_ADDR", RCV_ADDR)
-    #print("RCV_ADDR")
-    #print(RCV_ADDR)
     SND_ADDR = SND_ADDR[8:]
     RCV_ADDR = RCV_ADDR[8:]
     if DEBUG_MODE: print("New RCV_ADDR", RCV_ADDR)
-    #print("RCV_ADDR2")
-    #print(RCV_ADDR)
     # identify session with a number between 0 and 255: NOT USED YET
     sessnum = machine.rng() & 0xFF
 
@@ -214,13 +210,13 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                 sent += 1
                 retrans += 1
                 if(flagn==3):   #AM: Para no dejar el socket colgado se pone un reenvio de 3 paquetes
+                    print("NO SE RECIBE ACK 3 VECES")   ###
                     dentro= True
                     break
 
     if DEBUG_MODE: print("RETURNING tsend")        
     return(sent,retrans,sent)
 
-#
 #
 # Trecv persistent
 def trecv(the_sock, MY_ADDR, SND_ADDR):
@@ -294,6 +290,7 @@ def trecv(the_sock, MY_ADDR, SND_ADDR):
             if last_pkt:
                 break
     the_sock.close()
+    sleep(3)
     return rcvd_data
 
 #Trecv no persistent

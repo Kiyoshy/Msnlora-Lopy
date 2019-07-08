@@ -6,7 +6,7 @@ Based on https://github.com/gie-sakura/msnlora
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy. This version is capable of transmitting 100000KB.
 
 ### Prerequisites
 
@@ -78,8 +78,8 @@ Connect to the network and type the address
 
 ## Authors
 
-* **Angélica Moreno Cárdenas**
 * **Miguel Kiyoshy Nakamura Pinto**
+* **Angélica Moreno Cárdenas**
 * **Pietro Manzoni**
 
 ## License

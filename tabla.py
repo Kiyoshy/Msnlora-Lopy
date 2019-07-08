@@ -85,6 +85,7 @@ class BaseDatos:
 		self.message_number=self.n
 		if self.modep==2: print("Reception OK")
 		if self.modep==3: print(destino + " " + "has a new message")
+
 		if(self.message_number==10):
 			print("Saving Databases")
 			x = save_backup(self.BaseU,self.BaseM)
