@@ -213,7 +213,6 @@ class Server:
              if (file_requested.find("execposthandler") != -1):
                  if(self.modep==1):
                     print("... PM: running python code")
-                    ####print("EL TREQBODY ES: ", str(treqbody))
                     print("DEBUG Server: lenght message:",len(treqbody))
                  if (len(treqbody) > 25):
                      response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
@@ -282,7 +281,6 @@ class Server:
     
     data=b""
     data = s_left.recv(1024)
-
     while True:
         check_header = bytes.decode(data)
         check_header_list = (check_header.split('\r\n'))  #Create list to check header
@@ -304,7 +302,7 @@ class Server:
         else:
             if (self.modep==1): print("DEBUG Server: Data Received")
             break
-    if(self.modep==1):print("Got connection from: ", addr)
+    if(self.modep==1): print("Got connection from: ", addr)
     if(self.modep==1): print("DEBUG Server: Data received: ",data)
     if(data==b""):
         if(self.modep==1 | self.modep==2): print("Null Method, Discarding")

@@ -4,13 +4,21 @@ Low-power system to connect isolated communities based on the LoRa protocol to p
 
 Based on https://github.com/gie-sakura/msnlora
 
+### Technical details
+
+   - Device: Pycom LoPy4
+   - Firmware version: 1.18.2.r3
+
+### Current limitations
+This version is capable of transmitting 100KB.
+
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy. This version is capable of transmitting 100KB.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes in your lopy. 
 
 ### Prerequisites
 
-###In the lopy device
+In the lopy device:
 
 This is the basic information required to set up a suitable development environment for a Pycom device, in this case the LoPys.
 
