@@ -92,7 +92,7 @@ Connect to the network and type the address
 
 ## License
 
-This project is licensed under the GNU GPLv3 - see the [LICENSE.md](license.md) file for details
+This project is licensed under the GNU GPLv3 - see the [LICENSE.md](license.md) file for details.
 
 ## Acknowledgments
 

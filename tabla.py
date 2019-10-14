@@ -91,7 +91,6 @@ class BaseDatos:
 			x = save_backup(self.BaseU,self.BaseM)
 			self.message_number=0
 
-
 	def consultaControl(self,destino):
 		if self.modep==1: print("DEBUG Tabla: User Database: ", self.BaseU)
 		bandera = 0
@@ -135,6 +134,7 @@ class BaseDatos:
 		if self.modep==3: print ("You've received a new broadcast message")
 
 ################################################################################################################
+
 #Management of the data in the SD Card
 def save_backup(DBU,DBM):
 	global q

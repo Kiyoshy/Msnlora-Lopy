@@ -51,7 +51,6 @@ def make_subpacket(TipoMensaje, TipoPaquete, content):
     Mensaje = 0
     if TipoPaquete: Paquete = Paquete | (1<<0) #False for Audio, True for plain text
     if TipoMensaje: Mensaje = Mensaje | (1<<0) # False for Control, True for payload
-
     header = struct.pack(HEADER_FORMAT, Mensaje, Paquete)
     return header + content
 
@@ -59,13 +58,10 @@ def make_subpacket(TipoMensaje, TipoPaquete, content):
 def unpack(packet):
     header  = packet[:HEADER_SIZE]
     content = packet[HEADER_SIZE:]
-
     TM, TP = struct.unpack(HEADER_FORMAT, header)
-    
     return TM, TP, content    
 
 def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
-
     # AM: We send a broadcast message looking for the user
     mensaje =""
     content= ""
@@ -99,10 +95,10 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
         print("DEBUG Posthandler: Searching: ", tbs)
     # AM: We wait 20 seconds for the user
     while True:
-        if(tbs=="broadcast"):#We check if the message is broadcast
+        if(tbs=="broadcast"): #We check if the message is broadcast
             if DEBUG_MODE: print("DEBUG Posthandler: Sending Message broadcast")
             if VERBOSE_MODE: print("Sending Message Broadcast")
-            sent,retrans,nsent = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
+            sent, retrans, nsent, notsend = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
             mensaje=b""
             m_broadcast = 1
             break
@@ -111,7 +107,7 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
             if DEBUG_MODE: print("DEBUG Posthandler: Searching Via Telegram to: ", tbs)
         if DEBUG_MODE: print("DEBUG Posthandler: Searching: ", cuenta)
         if VERBOSE_MODE: print("Searching Destination...")
-        sent,retrans,nsent = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
+        sent, retrans, nsent, notsend = swlp.tsend(content, the_sock, my_lora_address, dest_lora_address, mode)
         mensaje,address = swlp.trecvcontrol(the_sock, my_lora_address, dest_lora_address, mode)
         if DEBUG_MODE:
             print("DEBUG Posthandler: Message: ", mensaje)
@@ -126,7 +122,6 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
     return mensaje,m_broadcast
 
 def run(post_body,socket,mac,sender,flag_broadcast, mode):
-
     gc.enable()
     gc.collect()
     print("---->mem_free: ", gc.mem_free())
@@ -160,21 +155,36 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
         if VERBOSE_MODE: 
             print("Destination found")
             print("Sending message")
-        sent, retrans,sent = swlp.tsend(aenvio, socket, mac, dest_lora_address, mode)
+        sent, retrans, sent, notsend = swlp.tsend(aenvio, socket, mac, dest_lora_address, mode)
         elapsed_time = utime.ticks_ms() - start_time
-        if DEBUG_MODE:
-            print("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
-            print("DEBUG Posthandler: Retransmisions",retrans)
-            print("DEBUG Posthandler: Segments sent:",sent)
-        if VERBOSE_MODE: print("Sent OK")
-        if NORMAL_MODE: print("Message sent")
-        ufun.set_led_to(OFF)
-        # PM: creating web page to be returned
-        r_content = "<h1>Message sent via LoRa</h1>\n"
-        r_content += "\n"
-        r_content += tbs + "\n"
-        r_content += "\n"
-        r_content += "<p><a href='/registro'>Back to home</a></p>\n"
+        if notsend == 1:
+            if DEBUG_MODE:
+                print ("DEBUG Posthandler: Message can't be sent. Try again")
+            if (VERBOSE_MODE | NORMAL_MODE):
+                print ("Message can't be sent. Try again")
+            ufun.set_led_to(OFF)
+            #KN: creating web page to be returned
+            r_content = "<h1>Message can't be sent. Try again</h1>\n"
+            r_content += "\n"
+            r_content += '<form class="form-horizontal well" action="" method="post"><div class="button"><button id="btn" type="submit" onclick=this.form.action="resend.html";document.getElementById("oculta").style.visibility="visible">Resend</button></div>'
+            r_content += "\n"
+            r_content += '<div id="oculta" style="visibility:hidden">Resending...</div>'
+            r_content += "\n"
+            r_content += "<p><a href='/registro'>Back to home</a></p>\n"
+        else:
+            if DEBUG_MODE:
+                print("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
+                print("DEBUG Posthandler: Retransmisions",retrans)
+                print("DEBUG Posthandler: Segments sent:",sent)
+            if VERBOSE_MODE: print("Sent OK")
+            if NORMAL_MODE: print("Message sent")
+            ufun.set_led_to(OFF)
+            # PM: creating web page to be returned
+            r_content = "<h1>Message sent via LoRa</h1>\n"
+            r_content += "\n"
+            r_content += tbs + "\n"
+            r_content += "\n"
+            r_content += "<p><a href='/registro'>Back to home</a></p>\n"
     elif(m_broadcast==1):
         # AM: Creating Web Page to be returned
         r_content = "<h1>Message sent to all users via LoRa</h1>\n"
@@ -186,7 +196,7 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
         ufun.set_led_to(OFF)
         r_content = "<h1>Destination Not found\n"
         r_content += "<h1><a href='/registro'>Back To Home</a></h1>\n"
-    return r_content
+    return r_content,dest_lora_address
 
 def broadcast(message, mode): #Function to save a broadcast message
     tabla=BaseDatos(mode)
@@ -202,3 +212,45 @@ def consultat(user, mode):
     if DEBUG_MODE: print("Consulta")
     #bandera=1
     return bandera
+
+def resend(post_body,socket,mac,sender,dest_lora_address, mode):
+    blks = post_body.split("&")
+    if DEBUG_MODE: print("DEBUG Posthandler: Data received from the form: ", blks)
+    tbs=str(mac)
+    for i in blks:
+        v = i.split("=")
+        tbs += ","+v[1]
+    if DEBUG_MODE: print("DEBUG Posthandler: tbs: ", tbs)
+    loramac, receiver, messagere=tbs.split(",")
+    aenvio = str(sender)+","+str(messagere)+","+str(receiver)
+    sent, retrans, sent, notsend = swlp.tsend(aenvio, socket, mac, dest_lora_address, mode)
+    #elapsed_time = utime.ticks_ms() - start_time
+    if notsend == 1:
+        if DEBUG_MODE:
+            print ("DEBUG Posthandler: Message can't be sent. Try again")
+        if (VERBOSE_MODE | NORMAL_MODE):
+            print ("Message can't be sent. Try again")
+        ufun.set_led_to(OFF)
+        #KN: creating web page to be returned
+        r_content = "<h1>Message can't be sent. Try again</h1>\n"
+        r_content += "\n"
+        r_content += '<form class="form-horizontal well" action="" method="post"><div class="button"><button id="btn" type="submit" onclick=this.form.action="resend.html";document.getElementById("oculta").style.visibility="visible">Resend</button></div>'
+        r_content += "\n"
+        r_content += '<div id="oculta" style="visibility:hidden">Resending...</div>'
+        r_content += "\n"
+        r_content += "<p><a href='/registro'>Back to home</a></p>\n"
+    else:
+        if DEBUG_MODE:
+            print("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
+            print("DEBUG Posthandler: Retransmisions",retrans)
+            print("DEBUG Posthandler: Segments sent:",sent)
+        if VERBOSE_MODE: print("Sent OK")
+        if NORMAL_MODE: print("Message sent")
+        ufun.set_led_to(OFF)
+        # PM: creating web page to be returned
+        r_content = "<h1>Message sent via LoRa</h1>\n"
+        r_content += "\n"
+        r_content += tbs + "\n"
+        r_content += "\n"
+        r_content += "<p><a href='/registro'>Back to home</a></p>\n"
+    return r_content

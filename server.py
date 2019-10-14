@@ -56,7 +56,6 @@ dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 flag_mode=0
 
 class Server:
-    #print("---SERVER---CLASS SERVER---")
  """ Class describing a simple HTTP server objects."""
 
  def __init__(self, port, mode):
@@ -85,7 +84,6 @@ class Server:
          try:
              print("Launching HTTP server on ", self.host, ":",self.port)
              self.socket.bind((self.host, self.port))
-
          except Exception as e:
              print("ERROR: Failed to acquire sockets for ports ", user_port, " and 8080. ")
              print("Try running the Server in a privileged user mode.")
@@ -98,7 +96,7 @@ class Server:
      if(self.modep==1):print ("Awaiting New connection")
      self.socket.listen(3) # maximum number of queued connections
 
- def connectionLoRa(self):#Funcion para crear socket LoRa
+ def connectionLoRa(self): #Function to create LoRa socket
     try:
         self.s_right = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.loramac = binascii.hexlify(network.LoRa().mac())
@@ -111,10 +109,8 @@ class Server:
      try:
          print("Shutting down the server")
          s.socket.shutdown(socket.SHUT_RDWR)
-
      except Exception as e:
          print("Warning: could not shut down the socket. Maybe it was already closed...", e)
-
 
  def _gen_headers(self, code):
      """ Generates HTTP response Headers. """
@@ -151,7 +147,7 @@ class Server:
 
      # split on space "GET /file.html" -into-> ('GET','file.html',...)
      file_requested = treq.split(' ')
-     if(self.modep==1): print("Debug Server: File Requested: ", file_requested)
+     if(self.modep==1): print("Debug Server: File Requested: ", file_requested)   ###
      if(file_requested==''):
         file_requested = '/index.html'
      file_requested = file_requested[1] # get 2nd element
@@ -198,7 +194,7 @@ class Server:
                     response_headers = self._gen_headers( 404)
                     if (request_method == 'GET'):
                         response_content = b"<html><head><meta charset='utf-8'><title>LoRa</title></head><body><p>Error 404: File not found</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-         server_response =  response_headers.encode() # return headers for GET and HEAD
+         server_response =  response_headers.encode() # return headers for GET and HEAD   
          if (request_method == 'GET'):
             server_response +=  response_content  # return additional conten for GET only
          s_left.send(server_response)
@@ -215,7 +211,8 @@ class Server:
                     print("... PM: running python code")
                     print("DEBUG Server: lenght message:",len(treqbody))
                  if (len(treqbody) > 25):
-                     response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
+                     self.form=treqbody
+                     response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
                  else:
 	                 if(self.modep==1):print("... PM: empty POST received")
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
@@ -244,17 +241,19 @@ class Server:
                 if(self.modep==3): print("Message Broadcast sent")
                 gc.collect()
                 tabla=BaseDatos(self.modep)
-                response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,1, self.modep)
+                response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,1, self.modep)
              elif (file_requested.find("telegram") != -1):
                 print("AM: Telegram Message")
                 tabla=BaseDatos(self.modep)
                 if(self.modep==1): print("DEBUG Server: lenght message:",len(treqbody))
                 if (len(treqbody) > 25):
-                    response_content = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,2, self.modep)
+                    response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,2, self.modep)
                 else:
                     print("... AM: empty POST received")
                     response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-
+             elif (file_requested.find("resend") != -1):
+                    if(self.modep==1): print("DEBUG Server: Resending message")
+                    response_content = posthandler.resend(self.form, self.s_right, self.loramac, self.userR, self.dest_lora_address, self.modep)
              else:
                  file_handler = open(file_requested,'rb')
                  response_content = file_handler.read() # read file content
@@ -276,9 +275,8 @@ class Server:
      else:
          print("Unknown HTTP request method:", request_method)
  
- # KN: Function to receive all the message via TCP
+ # Function to receive all the message via TCP
  def checking_connection(self,s_left,addr):
-    
     data=b""
     data = s_left.recv(1024)
     while True:
@@ -302,7 +300,8 @@ class Server:
         else:
             if (self.modep==1): print("DEBUG Server: Data Received")
             break
-    if(self.modep==1): print("Got connection from: ", addr)
+
+    if(self.modep==1):print("Got connection from: ", addr)
     if(self.modep==1): print("DEBUG Server: Data received: ",data)
     if(data==b""):
         if(self.modep==1 | self.modep==2): print("Null Method, Discarding")
@@ -330,6 +329,7 @@ class Server:
                     print("DEBUG Server: done reading data from the LORA channel using swlpv3:",data)
                     print("The End")                
                 ufun.flash_led_to(OFF)
+
 ###################################################################################
 
 def LoRaRec(data,socket,source_address):
@@ -360,12 +360,14 @@ def LoRaRec(data,socket,source_address):
         if(mode_print==1): print("DEBUG Server: Flag ", bandera)
         if bandera == 1: #The user is in the database, I'm going to respond
             if(mode_print==1): print("DEBUG Server: Lora Address ", IPloraf)
-            sent, retrans, sent = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf, mode_print)#Function to send a LoRa Message using the protocol
+            sent, retrans, sent, notsend = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf, mode_print)#Function to send a LoRa Message using the protocol
     elif(source_address== my_lora_address[8:]): #The message is for me, I'm going to save it
         message_raw = data
         if(mode_print==1): print("DEBUG Server: message in server", message_raw)
         if (mode_print==2): print("Receiving message")
-        if(message_raw !=b""):
+        if(message_raw ==b"Failed"):
+            print("Reception Failed, Discarding")
+        elif(message_raw !=b"") and (message_raw !=b"Failed"):
             mensajet = str(message_raw)
             idEmisor, messagef,user_final = mensajet.split(",")
             if (mode_print==1):
@@ -379,6 +381,7 @@ def LoRaRec(data,socket,source_address):
 ################################################################################################################################
 
 def choose_mode():   # KN: Execution mode assignment
+    print("---CHOOSE MODE---")
     while True:
         mode = str.lower(input('Choose the execution mode ("Debug" "Verbose" "Normal"): '))
         if mode == "debug":
