@@ -10,47 +10,48 @@ from machine import SD
 
 VERBOSE_MODE = False
 NORMAL_MODE = False
-q=0
+q = 0
+
 
 class BaseDatos:
-	BaseM=[]
-	BaseU=[]
-	BaseB=[]
-	n=0
+	BaseM = []
+	BaseU = []
+	BaseB = []
+	n = 0
 	message_number = 0
-	parameter_mode=""
+	parameter_mode = ""
 	DEBUG_MODE = 0
 	
 	def __init__(self, mode):
-		self.modep=mode
+		self.modep = mode
 
 	def get_mode():
-		sndmode=self.modep
+		sndmode = self.modep
 		return sndmode
 
-	def ingresoRegistro(self,usuario,flag): #AM: Register from a new user
-		if flag==0:
-			tbs="a"
+	def ingresoRegistro(self,usuario,flag):   # AM: Register from a new user
+		if flag == 0:
+			tbs = "a"
 			blks = usuario.split("&")
 			for i in blks:
 				v = i.split("=")
-				tbs += ","+v[1]
-			if(self.modep==1):print("tbs",tbs)
-			x=tbs.split(",")
-			if(self.modep==1):print("DEBUG Tabla: data from the form: ", x)
-			user=x[1]
+				tbs += "," + v[1]
+			if (self.mode p== 1): print ("tbs", tbs)
+			x = tbs.split(",")
+			if (self.modep == 1): print ("DEBUG Tabla: data from the form: ", x)
+			user = x[1]
 		else:
-			user=usuario
-		if self.modep==1: print("DEBUG Tabla: User: ", user)
+			user = usuario
+		if self.modep == 1: print ("DEBUG Tabla: User: ", user)
 		if user in self.BaseU:
-			posicion=self.BaseU.index(user)
+			posicion = self.BaseU.index(user)
 		else:
 			self.BaseU.append(user)
 			self.BaseM.append(user)
-			posicion=self.BaseU.index(user)
-			self.BaseM[posicion]={}	
-		if self.modep==1: print("DEBUG Tabla: Position: ", posicion)
-		if self.modep==1: print("DEBUG Tabla: User Database: ", self.BaseU)
+			posicion = self.BaseU.index(user)
+			self.BaseM[posicion] = {}	
+		if self.modep == 1: print ("DEBUG Tabla: Position: ", posicion)
+		if self.modep == 1: print ("DEBUG Tabla: User Database: ", self.BaseU)
 		r_content='<head><meta charset="utf-8"><title>Register LoRa</title>\n'
 		r_content +='<style type="text/less">\n'
 		r_content +=".dropdown-toggle {display:none;}\n"
@@ -66,48 +67,49 @@ class BaseDatos:
 		r_content += "<p><a href='/'>Back to home</a></p></body>\n"
 		return r_content,user
 
-	def ingreso(self,Emisor,destino,Mensaje): #AM: Function to save the messages
-		print("Saving Message")
-		if self.modep==1: print("DEBUG Tabla: Number of Message: ", self.message_number)
-		BaseDatos.n+=1
-		if self.modep==1: 
-			print("DEBUG Tabla: Number of Message: ", self.n)
-			print("DEBUG Tabla: Message Database: ", self.BaseM)
-			print("DEBUG Tabla: User Database: ", self.BaseU)
-		posicion=self.BaseU.index(destino)
-		if self.modep==1: print("DEBUG Tabla: Position: ", posicion)
-		self.BaseM[posicion][str(self.n)+"Emisor "]=Emisor
-		self.BaseM[posicion][str(self.n)+"Mensaje "]=Mensaje
-		if self.modep==1: 
-			print("DEBUG Tabla: New Users Database: ", self.BaseU)
-			print("DEBUG Tabla: New Message Database: ", self.BaseM)
-			print("DEBUG Tabla: Number of Message: ", self.n)
-		self.message_number=self.n
-		if self.modep==2: print("Reception OK")
-		if self.modep==3: print(destino + " " + "has a new message")
+	def ingreso(self,Emisor,destino,Mensaje):    # AM: Function to save the messages
+		print ("Saving Message")
+		if self.modep == 1: print ("DEBUG Tabla: Number of Message: ", self.message_number)
+		BaseDatos.n += 1
+		if self.modep == 1: 
+			print ("DEBUG Tabla: Number of Message: ", self.n)
+			print ("DEBUG Tabla: Message Database: ", self.BaseM)
+			print ("DEBUG Tabla: User Database: ", self.BaseU)
+		posicion = self.BaseU.index(destino)
+		if self.modep == 1: print ("DEBUG Tabla: Position: ", posicion)
+		self.BaseM[posicion][str(self.n)+"Emisor "] = Emisor
+		self.BaseM[posicion][str(self.n)+"Mensaje "] = Mensaje
+		if self.modep == 1: 
+			print ("DEBUG Tabla: New Users Database: ", self.BaseU)
+			print ("DEBUG Tabla: New Message Database: ", self.BaseM)
+			print ("DEBUG Tabla: Number of Message: ", self.n)
+		self.message_number = self.n
+		if self.modep == 2: print ("Reception OK")
+		if self.modep == 3: print (destino + " " + "has a new message")
 
-		if(self.message_number==10):
-			print("Saving Databases")
+		if (self.message_number == 10):
+			print ("Saving Databases")
 			x = save_backup(self.BaseU,self.BaseM)
-			self.message_number=0
+			self.message_number = 0
+
 
 	def consultaControl(self,destino):
-		if self.modep==1: print("DEBUG Tabla: User Database: ", self.BaseU)
+		if self.modep == 1: print ("DEBUG Tabla: User Database: ", self.BaseU)
 		bandera = 0
-		if destino in self.BaseU: # AM: Checking if the user is in the database
+		if destino in self.BaseU:    # AM: Checking if the user is in the database
 			bandera = 1
 		else:
 			bandera = 0
 		return bandera
 
 	def consulta(self,user):
-		if self.modep==1: print("DEBUG Tabla: User: ", user)
+		if self.modep == 1: print ("DEBUG Tabla: User: ", user)
 		BaseUConsulta = self.BaseU
-		if self.modep==1: print("DEBUG Tabla: User Database: ", BaseUConsulta)
+		if self.modep == 1: print ("DEBUG Tabla: User Database: ", BaseUConsulta)
 		BaseMConsulta = self.BaseM
-		posicion=BaseUConsulta.index(user)
-		if self.modep==1: print("DEBUG Tabla: Messages: ", BaseMConsulta[posicion])
-		if (BaseMConsulta[posicion]!={}):
+		posicion = BaseUConsulta.index(user)
+		if self.modep == 1: print ("DEBUG Tabla: Messages: ", BaseMConsulta[posicion])
+		if (BaseMConsulta[posicion] != {}):
 			r_content = "<h1>Messages sent via LoRa</h1>\n"
 			r_content += "\n"
 			for key,val in BaseMConsulta[posicion].items(): 
@@ -124,18 +126,17 @@ class BaseDatos:
 			r_content += "<h1>Broadcast Messages</h1>\n"
 			r_content += str(self.BaseB)+" , \n"
 			r_content += "<p><a href='/registro'>Back to home</a></p>\n"
-		if self.modep==1: print("DEBUG Tabla: r_content", r_content)
+		if self.modep==1: print ("DEBUG Tabla: r_content", r_content)
 		return r_content
 
 	def broadcast_message(self,message):
 		self.BaseB.append(message)
-		if self.modep==1: print("DEBUG Tabla: Message Broadcast Saved")
-		if self.modep==2: print("Message Broadcast Received")
-		if self.modep==3: print ("You've received a new broadcast message")
+		if self.modep == 1: print ("DEBUG Tabla: Message Broadcast Saved")
+		if self.modep == 2: print ("Message Broadcast Received")
+		if self.modep == 3: print ("You've received a new broadcast message")
 
 ################################################################################################################
-
-#Management of the data in the SD Card
+# Management of the data in the SD Card
 def save_backup(DBU,DBM):
 	global q
 	f = open('/sd/DatabaseU'+str(q)+'.txt', 'w')
@@ -145,7 +146,7 @@ def save_backup(DBU,DBM):
 	f.write(str(DBM))
 	f.close()
 	print("Databases Saved")
-	q+=1
+	q += 1
 	return q
 
 def open_backup(a):

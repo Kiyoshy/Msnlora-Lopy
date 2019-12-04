@@ -10,7 +10,7 @@ Based on https://github.com/gie-sakura/msnlora
    - Firmware version: 1.18.2.r3
 
 ### Current limitations
-This version is capable of transmitting 100KB.
+This version is capable of transmitting 150 KB.
 
 ## Getting Started
 
@@ -92,7 +92,7 @@ Connect to the network and type the address
 
 ## License
 
-This project is licensed under the GNU GPLv3 - see the [LICENSE.md](license.md) file for details.
+This project is licensed under the GNU GPLv3 - see the [LICENSE.md](license.md) file for details
 
 ## Acknowledgments
 
