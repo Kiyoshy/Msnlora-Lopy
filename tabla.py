@@ -12,21 +12,20 @@ VERBOSE_MODE = False
 NORMAL_MODE = False
 q = 0
 
-
 class BaseDatos:
 	BaseM = []
 	BaseU = []
 	BaseB = []
 	n = 0
 	message_number = 0
-	parameter_mode = ""
+	parameter_mode=""
 	DEBUG_MODE = 0
 	
 	def __init__(self, mode):
 		self.modep = mode
 
 	def get_mode():
-		sndmode = self.modep
+		sndmode=self.modep
 		return sndmode
 
 	def ingresoRegistro(self,usuario,flag):   # AM: Register from a new user
@@ -36,7 +35,7 @@ class BaseDatos:
 			for i in blks:
 				v = i.split("=")
 				tbs += "," + v[1]
-			if (self.mode p== 1): print ("tbs", tbs)
+			if (self.modep == 1): print ("tbs", tbs)
 			x = tbs.split(",")
 			if (self.modep == 1): print ("DEBUG Tabla: data from the form: ", x)
 			user = x[1]
@@ -77,8 +76,8 @@ class BaseDatos:
 			print ("DEBUG Tabla: User Database: ", self.BaseU)
 		posicion = self.BaseU.index(destino)
 		if self.modep == 1: print ("DEBUG Tabla: Position: ", posicion)
-		self.BaseM[posicion][str(self.n)+"Emisor "] = Emisor
-		self.BaseM[posicion][str(self.n)+"Mensaje "] = Mensaje
+		self.BaseM[posicion][str(self.n) + "Emisor "] = Emisor
+		self.BaseM[posicion][str(self.n) + "Mensaje "] = Mensaje
 		if self.modep == 1: 
 			print ("DEBUG Tabla: New Users Database: ", self.BaseU)
 			print ("DEBUG Tabla: New Message Database: ", self.BaseM)
@@ -86,12 +85,10 @@ class BaseDatos:
 		self.message_number = self.n
 		if self.modep == 2: print ("Reception OK")
 		if self.modep == 3: print (destino + " " + "has a new message")
-
 		if (self.message_number == 10):
 			print ("Saving Databases")
 			x = save_backup(self.BaseU,self.BaseM)
 			self.message_number = 0
-
 
 	def consultaControl(self,destino):
 		if self.modep == 1: print ("DEBUG Tabla: User Database: ", self.BaseU)
@@ -118,7 +115,7 @@ class BaseDatos:
 			r_content += "<h1>Broadcast Messages</h1>\n"
 			r_content += str(self.BaseB)+" , \n"
 			r_content += "<p><a href='/registro'>Back to home</a></p>\n"
-			self.BaseM[posicion]={}
+			self.BaseM[posicion] = {}
 		else:
 			r_content = "<h1>No Messages</h1>\n"
 			r_content += "\n"
@@ -126,7 +123,7 @@ class BaseDatos:
 			r_content += "<h1>Broadcast Messages</h1>\n"
 			r_content += str(self.BaseB)+" , \n"
 			r_content += "<p><a href='/registro'>Back to home</a></p>\n"
-		if self.modep==1: print ("DEBUG Tabla: r_content", r_content)
+		if self.modep == 1: print ("DEBUG Tabla: r_content", r_content)
 		return r_content
 
 	def broadcast_message(self,message):
@@ -139,10 +136,10 @@ class BaseDatos:
 # Management of the data in the SD Card
 def save_backup(DBU,DBM):
 	global q
-	f = open('/sd/DatabaseU'+str(q)+'.txt', 'w')
+	f = open('/sd/DatabaseU'+ str(q) + '.txt', 'w')
 	f.write(str(DBU))
 	f.close()
-	f = open('/sd/DatabaseM'+str(q)+'.txt', 'w')
+	f = open('/sd/DatabaseM' + str(q) + '.txt', 'w')
 	f.write(str(DBM))
 	f.close()
 	print("Databases Saved")
@@ -150,11 +147,11 @@ def save_backup(DBU,DBM):
 	return q
 
 def open_backup(a):
-	f = open('/sd/DatabaseU'+str(a-1)+'users.txt', 'r')
+	f = open('/sd/DatabaseU' + str(a-1) + 'users.txt', 'r')
 	dataUser = f.readall()
 	f.close()
 	listaUser = eval(dataUser)
-	f = open('/sd/DatabaseM'+str(a-1)+'users.txt', 'r')
+	f = open('/sd/DatabaseM' + str(a - 1) + 'users.txt', 'r')
 	dataMess = f.readall()
 	f.close()
 	listaMess = eval(dataMess)

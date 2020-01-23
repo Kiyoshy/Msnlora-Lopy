@@ -74,7 +74,7 @@ def debug_printpacket(msg, packet, cont=False):
 def timeout(signum, frame):
     raise socket.timeout
 
-def choose_mode(mode):   # Execution mode assignment
+def choose_mode(mode):   # KN: Execution mode assignment
     if mode == 1:
         DEBUG_MODE = True
         VERBOSE_MODE = False
@@ -135,12 +135,12 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
         while True:
             try:
                 # waiting for a ack
-                if DEBUG_MODE: print ("DEBUG Swlp: SND_ADDR", SND_ADDR)
+                if DEBUG_MODE: print("DEBUG Swlp: SND_ADDR", SND_ADDR)
                 ack = the_sock.recv(HEADER_SIZE)
                 recv_time = time.time()
                 # Unpack packet information
                 ack_source_addr, ack_dest_addr, ack_seqnum, ack_acknum, ack_is_ack, ack_final, ack_check, ack_content = unpack(ack)
-                if (ack_seqnum == 0 and bandera == 0):
+                if (ack_seqnum == 0 and bandera ==0):
                     rcv2 = ack_source_addr
                     bandera = 1
                 if DEBUG_MODE: 
@@ -148,7 +148,7 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                     print(str(ack_source_addr))
                 if ack_final: break 
                 # If valid, here we go!
-                if (ack_is_ack) and (ack_acknum == acknum) and (rcv2==ack_source_addr):
+                if (ack_is_ack) and (ack_acknum == acknum) and (rcv2 == ack_source_addr):
                     # RTT calculations
                     sample_rtt = recv_time - send_time
                     if estimated_rtt == -1:
@@ -157,7 +157,7 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                         estimated_rtt = estimated_rtt * 0.875 + sample_rtt * 0.125
                     dev_rtt = 0.75 * dev_rtt + 0.25 * abs(sample_rtt - estimated_rtt)
                     the_sock.settimeout(estimated_rtt + 4 * dev_rtt)
-                    if DEBUG_MODE: print ("Setting timeout to", estimated_rtt + 4 * dev_rtt)
+                    if DEBUG_MODE: print ("setting timeout to", estimated_rtt + 4 * dev_rtt)
                     text    = payload[0:PAYLOAD_SIZE]   # Copying PAYLOAD_SIZE bytes header from the input string
                     payload = payload[PAYLOAD_SIZE:]    # Shifting the input string
                     # AM: Checking if it's the last ACK
@@ -177,16 +177,16 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
                     the_sock.send(packet)
                     send_time = time.time()
                     sent += 1
-                    flagn = 0
+                    flagn=0
                     if DEBUG_MODE: debug_printpacket("Sending new packet", packet, True)
                 else:
                     if DEBUG_MODE: print ("ERROR: packet received not valid")
                     raise socket.timeout
             except socket.timeout:
-                if DEBUG_MODE: print ("EXCEPTION!! Socket timeout: ", time.time())
+                if DEBUG_MODE: print("EXCEPTION!! Socket timeout: ", time.time())
                 packet = make_packet(SND_ADDR, RCV_ADDR, seqnum, acknum, DATA_PACKET, last_pkt, text)
                 the_sock.send(packet)
-                flagn +=1
+                flagn += 1
                 if DEBUG_MODE: 
                     debug_printpacket("Re-sending packet", packet)
                     print ("From Swlp Flag Number: ", flagn)
@@ -204,7 +204,7 @@ def tsend(payload, the_sock, SND_ADDR, RCV_ADDR, mode):
 
 #Trecv no persistent
 def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
-    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE = choose_mode(mode)
+    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=choose_mode(mode)
     flag_recv = False
     # Shortening addresses to save space in packet
     MY_ADDR = MY_ADDR[8:]
@@ -220,11 +220,11 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
             # Receive any packet
             if DEBUG_MODE: print ("DEBUG Swlp: From Swlp My Address: ", MY_ADDR)
             packet = the_sock.recv(MAX_PKT_SIZE)
-            if DEBUG_MODE: print("Content received", packet)
+            if DEBUG_MODE: print ("Content received", packet)
             source_addr, dest_addr, seqnum, acknum, ack, last_pkt, check, content = unpack(packet)
             address_check = dest_addr
             if DEBUG_MODE: print ("From Swlp receiving source Address: ", source_addr) 
-            if (dest_addr==MY_ADDR) or (dest_addr==ANY_ADDR):
+            if (dest_addr == MY_ADDR) or (dest_addr == ANY_ADDR):
                 flag_recv = True
                 break
             else: 
@@ -252,7 +252,7 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
             rcvd_data = b"Failed"
             return rcvd_data, address_check
         if (source_addr == b'raspberr') or (source_addr == b'aspberry'):
-            if DEBUG_MODE: print ("DEBUG Swlp: Sending again because it's a raspberry")
+            if DEBUG_MODE: print("DEBUG Swlp: Sending again because it's a raspberry")
             time.sleep(1)
             the_sock.send(ack_segment)
         if not last_pkt:
@@ -264,11 +264,11 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
                         packet = the_sock.recv(MAX_PKT_SIZE)
                         source_addr, dest_addr, seqnum, acknum, ack, last_pkt, check, content = unpack(packet)
                         dest_addra = str(dest_addr)
-                        dest_addr2 = dest_addra[2:(len(dest_addra)-1)]
+                        dest_addr2=dest_addra[2:(len(dest_addra)-1)]
                         if DEBUG_MODE: 
                             print ("DEBUG Swlp: dest_addr",dest_addra)
                             print ("DEBUG Swlp: MY_ADDR",MY_ADDR)
-                        if (dest_addr == MY_ADDR):
+                        if (dest_addr==MY_ADDR):
                             if DEBUG_MODE: debug_printpacket("Received packet", packet, True)
                             break
                         else: 
@@ -314,6 +314,6 @@ def trecvcontrol(the_sock, MY_ADDR, SND_ADDR, mode):
                     if last_pkt:
                         break
                 except socket.timeout:
-                    if DEBUG_MODE: print("EXCEPTION!! Socket timeout: ", time.time())
+                    if DEBUG_MODE: print ("EXCEPTION!! Socket timeout: ", time.time())
                     break
     return rcvd_data, address_check

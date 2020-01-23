@@ -46,7 +46,6 @@ tx_retr=1                       # def.: tx_retries=1
 region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4
 dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 
-  
 
 def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
     # AM: We send a broadcast message looking for the user
@@ -72,11 +71,11 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
         device_class=dev_class)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
     dest_lora_address = b'FFFFFFFFFFFFFFFF'
-    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE=swlp.choose_mode(mode)
+    DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE = swlp.choose_mode(mode)
     if (tbs == "broadcast"):
         content = message + "," + str(tbs)
     else:
-        content=str(str(my_lora_address) + "," + str(tbs))
+        content = str(str(my_lora_address) + "," + str(tbs))
     if DEBUG_MODE:
         print ("DEBUG Posthandler: Content: ", content)
         print ("DEBUG Posthandler: Searching: ", tbs)
@@ -102,9 +101,9 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
         cuenta += 1
         if (mensaje != b""):    # We found the user receiver
             break
-        elif (cuenta == 3 and mensaje == b""):
+        elif (cuenta ==3 and mensaje == b""):
             if DEBUG_MODE: print ("DEBUG Posthandler: Message when destination not found: ", mensaje)
-            if (VERBOSE_MODE | NORMAL_MODE): print ("Destination not found")
+            if (VERBOSE_MODE | NORMAL_MODE): print("Destination not found")
             break
     return mensaje,m_broadcast
 
@@ -118,12 +117,12 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
     dest_lora_address = b""
     # PM: extracting data to be sent from passed POST body 
     blks = post_body.split("&")
-    #if DEBUG_MODE: print ("DEBUG Posthandler: Data received from the form: ", blks)     # KN: Enable this print to see the value of blks in debug mode
+    #if DEBUG_MODE: print("DEBUG Posthandler: Data received from the form: ", blks)       # KN: Enable this print to see the value of blks in debug mode
     tbs = str(mac)
     for i in blks:
         v = i.split("=")
         tbs += "," + v[1]
-    #if DEBUG_MODE: print ("DEBUG Posthandler: tbs: ", tbs)     # KN: Enable this print to see the value of tbs in debug mode
+    #if DEBUG_MODE: print("DEBUG Posthandler: tbs: ", tbs)     # KN: Enable this print to see the value of tbs in debug mode
     loramac, receiver, message = tbs.split(",")
     # AM: Checking where to send the message
     start_search_time = utime.ticks_ms()
@@ -138,7 +137,7 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
     if (dest_lora_address != b""):
         start_time = utime.ticks_ms()
         aenvio = str(sender) + "," + str(message) + "," + str(receiver)      # AM: When you know where to send the message
-        #if DEBUG_MODE: print ("DEBUG Posthandler: Payload to be sent: ", aenvio)      # KN: Enable this print to see the value of aenvio in debug mode
+        #if DEBUG_MODE: print("DEBUG Posthandler: Payload to be sent: ", aenvio)      # KN: Enable this print to see the value of aenvio in debug mode
         if VERBOSE_MODE: 
             print ("Destination found")
             print ("Sending message")
@@ -188,8 +187,8 @@ def run(post_body,socket,mac,sender,flag_broadcast, mode):
 def broadcast(message, mode):     # Function to save a broadcast message
     tabla = BaseDatos(mode)
     tabla.broadcast_message(message)
-    if DEBUG_MODE: print ("Posthandler: Broadcast Received")
-    if (VERBOSE_MODE | NORMAL_MODE): print ("Message Broadcast received")
+    if DEBUG_MODE: print ("received")
+    if (VERBOSE_MODE | NORMAL_MODE): print ("Posthandler: Message Broadcast received")
 
 def consultat(user, mode):
     tabla = BaseDatos(mode)
@@ -199,14 +198,14 @@ def consultat(user, mode):
 
 def resend(post_body,socket,mac,sender,dest_lora_address, mode):
     blks = post_body.split("&")
-    #if DEBUG_MODE: print ("DEBUG Posthandler: Data received from the form: ", blks)      # KN: Enable this print to see the value of blks in debug mode
-    tbs=str(mac)
+    #if DEBUG_MODE: print("DEBUG Posthandler: Data received from the form: ", blks)      # KN: Enable this print to see the value of blks in debug mode
+    tbs = str(mac)
     for i in blks:
         v = i.split("=")
         tbs += "," + v[1]
-    #if DEBUG_MODE: print ("DEBUG Posthandler: tbs: ", tbs)    # KN: Enable this print to see the value of tbs in debug mode
-    loramac, receiver, messagere=tbs.split(",")
-    aenvio = str(sender)+","+str(messagere)+","+str(receiver)
+    #if DEBUG_MODE: print("DEBUG Posthandler: tbs: ", tbs)       # KN: Enable this print to see the value of tbs in debug mode
+    loramac, receiver, messagere = tbs.split(",")
+    aenvio = str(sender) + "," + str(messagere) + "," + str(receiver)
     sent, retrans, sent, notsend = swlp.tsend(aenvio, socket, mac, dest_lora_address, mode)
     #elapsed_time = utime.ticks_ms() - start_time
     if notsend == 1:
@@ -228,8 +227,8 @@ def resend(post_body,socket,mac,sender,dest_lora_address, mode):
             print ("DEBUG Posthandler: Sent OK, Message time: %0.10f mseconds."% elapsed_time)
             print ("DEBUG Posthandler: Retransmisions", retrans)
             print ("DEBUG Posthandler: Segments sent:", sent)
-        if VERBOSE_MODE: print ("Sent OK")
-        if NORMAL_MODE: print ("Message sent")
+        if VERBOSE_MODE: print("Sent OK")
+        if NORMAL_MODE: print("Message sent")
         ufun.set_led_to(OFF)
         # PM: creating web page to be returned
         r_content = "<h1>Message sent via LoRa</h1>\n"

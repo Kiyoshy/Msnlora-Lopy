@@ -5,19 +5,19 @@
 # import signal  # Signal support (server shutdown on signal receive)
 # KN: Added connection to local network, server execution mode
 # KN: Added support for 150 KB
-# AM: Agregado funcionamiento entre dos dispositivos
+# AM: Added operation between two devices
 
-import socket  # Networking support
-from time import time    # Current time
+import socket     # Networking support
+from time import time      # Current time
 import ubinascii
 import binascii
-import posthandler # PM: code to be executed to handle a POST
-import swlp #AM: LoRa Protocol
-from tabla import BaseDatos #AM: Management of user and messages
-from network import LoRa #AM: LoRa
+import posthandler    # PM: code to be executed to handle a POST
+import swlp    # AM: LoRa Protocol
+from tabla import BaseDatos # AM: Management of user and messages
+from network import LoRa    # AM: LoRa
 import network
-import select #AM: Used to change between the sockets
-import ufun #AM: Used to handle the leds in the lopy
+import select    # AM: Used to change between the sockets
+import ufun      # AM: Used to handle the leds in the lopy
 import machine
 from network import WLAN
 from machine import SD
@@ -32,7 +32,7 @@ GREEN = 0x007F00
 PINK=0x6b007f
 BLUE= 0x005e63
 OFF = 0x000000
-WEB_PAGES_HOME_DIR = '/flash' # Directory where webpage files are stored
+WEB_PAGES_HOME_DIR = '/flash'    # Directory where webpage files are stored
 ANY_ADDR = b'FFFFFFFF'
 flag = 0
 DEBUG_MODE = False
@@ -63,7 +63,7 @@ class Server:
      """ Constructor """
      self.host = ''   # <-- works on all avaivable network interfaces
      self.port = port
-     self.www_dir =  WEB_PAGES_HOME_DIR
+     self.www_dir = WEB_PAGES_HOME_DIR
      self.flag_null = 0
      self.userR = ""
      self.modep=mode  # int number 1: Debug Mode 2:Verbose Mode 3:Normal Mode
@@ -72,16 +72,16 @@ class Server:
      """ Attempts to aquire the socket and launch the server """
      self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
      try: # user provided in the __init__() port may be unavaivable
-         if (self.modep==1): print ("Launching HTTP server on ", self.host, ":",self.port)
+         if (self.modep == 1): print ("Launching HTTP server on ", self.host, ":", self.port)
          self.socket.bind((self.host, self.port))
      except Exception as e:
-         print ("Warning: Could not acquire port:",self.port,"\n")
+         print ("Warning: Could not acquire port:", self.port, "\n")
          print ("I will try a higher port")
          # store to user provided port locally for later (in case 8080 fails)
          user_port = self.port
          self.port = 8080
          try:
-             print ("Launching HTTP server on ", self.host, ":",self.port)
+             print ("Launching HTTP server on ", self.host, ":", self.port)
              self.socket.bind((self.host, self.port))
          except Exception as e:
              print ("ERROR: Failed to acquire sockets for ports ", user_port, " and 8080. ")
@@ -91,14 +91,14 @@ class Server:
              sys.exit(1)
      if (self.modep == 1): print ("Server successfully acquired the socket with port:", self.port)
      print ("Press Ctrl+C to shut down the server and exit.")
-     if (self.modep == 1):print ("Awaiting New connection")
+     if (self.modep == 1): print ("Awaiting New connection")
      self.socket.listen(3) # Maximum number of queued connections
 
  def connectionLoRa(self): # Function to create LoRa socket
     try:
         self.s_right = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.loramac = binascii.hexlify(network.LoRa().mac())
-        if (self.modep == 1):print("Socket Created") # AM: Adquisicion socket LoRa
+        if (self.modep == 1): print ("Socket Created") # AM: Acquisition socket LoRa
     except socket.error:
         exit('Error creating socket.') 
 
@@ -130,21 +130,21 @@ class Server:
  def _wait_for_connections(self,s_left,addr,treq):
      # determine request method  (HEAD and GET are supported) (PM: added support to POST )
      request_method = treq.split(' ')[0]
-     if (self.modep==1):
+     if (self.modep == 1):
         print ("Method: ", request_method)
         print ("Full HTTP message: -->")
-        #print (treq)   # KN: Enable this print to see the value of treq in debug mode
+        #print (treq)      # KN: Enable this print to see the value of treq in debug mode
         print ("<--")
      treqhead = treq.split("\r\n\r\n")[0]
-     treqbody = treq[len(treqhead):].lstrip()   # PM: makes easier to handle various types of newlines
-     if (self.modep==1):
+     treqbody = treq[len(treqhead):].lstrip()      # PM: makes easier to handle various types of newlines
+     if (self.modep == 1):
         print ("only the HTTP body: -->")
         #print (treqbody)    # KN: Enable this print to see the value of treqbody in debug mode
         print ("<--")
      # split on space "GET /file.html" -into-> ('GET','file.html',...)
      file_requested = treq.split(' ')
-     #if(self.modep==1): print("Debug Server: File Requested: ", file_requested)    # KN: Enable this print to see the value of file_requested in debug mode
-     if (file_requested ==''):
+     #if(self.modep==1): print("Debug Server: File Requested: ", file_requested)    # KN: Enable this print to see the file requested in debug mode
+     if (file_requested == ''):
         file_requested = '/index.html'
      file_requested = file_requested[1] # get 2nd element
      # Check for URL arguments. Disregard them
@@ -153,30 +153,29 @@ class Server:
              file_requested = '/index.html' # load index.html by default
      elif (file_requested == '/favicon.ico'):  # most browsers ask for this file...
              file_requested = '/index.html' # ...giving them index.html instead
-     
      file_requested = self.www_dir + file_requested
-     if (self.modep==1): print ("Serving web page [",file_requested,"]")
+     if (self.modep == 1): print ("Serving web page [",file_requested,"]")
 
 # GET method
      if (request_method == 'GET') | (request_method == 'HEAD') :
      ## Load file content
          try:
              gc.collect()
-             if (self.modep==1): print("mem_free: ", gc.mem_free())
-             if (request_metho d=='GET' and file_requested =='/flash/registro'):
+             if (self.modep == 1): print ("mem_free: ", gc.mem_free())
+             if (request_method == 'GET' and file_requested =='/flash/registro'):
                  if (self.modep == 1): print ('Regreso del Usuario',self.userR)
                  tabla = BaseDatos(self.modep)
-                 response_content,self.userR=tabla.ingresoRegistro(self.userR,1)
-                 if (self.modep == 1): print('Datos Regreso',response_content)
+                 response_content,self.userR = tabla.ingresoRegistro(self.userR,1)
+                 if (self.modep == 1): print ('Datos Regreso', response_content)
              else:
                  file_handler = open(file_requested,'rb')
-                 if (self.modep == 1): print ('file_handler',file_handler)
-                 if (request_method == 'GET'):  # only read the file when GET
-                    response_content = file_handler.read() # read file content
+                 if (self.modep == 1): print ('file_handler', file_handler)
+                 if (request_method == 'GET'):      # only read the file when GET
+                    response_content = file_handler.read()     # read file content
                  file_handler.close()
              response_headers = self._gen_headers(200)
-             if (self.modep == 1): print ('response_headers',response_headers)
-         except Exception as e: # in case file was not found, generate 404 page
+             if (self.modep == 1): print ('response_headers', response_headers)
+         except Exception as e:     # in case file was not found, generate 404 page
              error_str = str(e)
              if (error_str[:24] == 'memory allocation failed'):
                 print ("Warning, memory allocation failed. Serving response code 500"+" -> "+error_str)
@@ -188,9 +187,9 @@ class Server:
                     response_headers = self._gen_headers( 404)
                     if (request_method == 'GET'):
                         response_content = b"<html><head><meta charset='utf-8'><title>LoRa</title></head><body><p>Error 404: File not found</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-         server_response =  response_headers.encode()  # return headers for GET and HEAD
+         server_response =  response_headers.encode()      # return headers for GET and HEAD
          if (request_method == 'GET'):
-            server_response +=  response_content   # return additional conten for GET only
+            server_response +=  response_content      # return additional conten for GET only
          s_left.send(server_response)
          if (self.modep == 1): print ("Closing connection with client")
          ufun.set_led_to(OFF)
@@ -208,12 +207,12 @@ class Server:
                      self.form = treqbody
                      response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,0, self.modep)
                  else:
-	                 if (self.modep==1): print ("... PM: empty POST received")
+	                 if (self.modep == 1): print ("... PM: empty POST received")
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
              elif (file_requested.find("tabla") != -1):                 
-                 if (self.modep == 1): print("DEBUG Server: Checking Messages")
-                 if (self.modep == 2): print("Checking Messages")
-                 if (self.modep == 3): print("Checking messages")
+                 if (self.modep == 1): print ("DEBUG Server: Checking Messages")
+                 if (self.modep == 2): print ("Checking Messages")
+                 if (self.modep == 3): print ("Checking messages")
                  gc.collect()
                  tabla = BaseDatos(self.modep)
                  response_content = tabla.consulta(self.userR)
@@ -231,7 +230,7 @@ class Server:
                      print ("... PM: empty POST received")
                      response_content = b"<html><body><p>Error: Please Choose a username</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
              elif (file_requested.find("broadcast") != -1):
-                if (self.modep == 1 | self.modep == 2): print ("AM: Sending Message Broadcast")
+                if (self.modep == 1 | self.modep ==2 ): print ("AM: Sending Message Broadcast")
                 if (self.modep == 3): print ("Message Broadcast sent")
                 gc.collect()
                 tabla = BaseDatos(self.modep)
@@ -250,15 +249,15 @@ class Server:
                     response_content = posthandler.resend(self.form, self.s_right, self.loramac, self.userR, self.dest_lora_address, self.modep)
              else:
                  file_handler = open(file_requested,'rb')
-                 response_content = file_handler.read()    # read file content
+                 response_content = file_handler.read()     # read file content
                  file_handler.close()
              response_headers = self._gen_headers(200)
-         except Exception as e:    # in case file was not found, generate 404 page
+         except Exception as e:      # in case file was not found, generate 404 page
              print ("Warning, file not found. Serving response code 404\n", e)
              response_headers = self._gen_headers(404)
              response_content = b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-         server_response =  response_headers.encode()    # return headers
-         server_response +=  response_content     # return additional content
+         server_response =  response_headers.encode()       # return headers
+         server_response +=  response_content       # return additional content
          s_left.send(server_response)
          if (self.modep == 1): print ("Closing connection with client")
          ufun.set_led_to(OFF)
@@ -272,14 +271,14 @@ class Server:
     data = s_left.recv(1024)
     while True:
         check_header = bytes.decode(data)
-        check_header_list = (check_header.split('\r\n'))    # Create list to check header
+        check_header_list = (check_header.split('\r\n'))  #Create list to check header
         check_header_dict = {}
-        for element in check_header_list:    # Create a dict
+        for element in check_header_list:  #Create a dict
             s_element = (str(element))
             if (s_element.find(':')) != -1:
                 keyValue = element.split(': ')
                 check_header_dict[keyValue[0]] = keyValue[1]
-        content_length = int(check_header_dict.get('Content-Length', 0))     # Content lenght
+        content_length = int(check_header_dict.get('Content-Length', 0))     #Content lenght
         checking_header = check_header.split("\r\n\r\n")[0]
         checking_body = check_header[len(checking_header):].lstrip()
         rec_body = len(checking_body)
@@ -292,12 +291,12 @@ class Server:
             if (self.modep == 1): print ("DEBUG Server: Data Received")
             break
     if (self.modep == 1): print ("Got connection from: ", addr)
-    if (self.modep == 1): print ("DEBUG Server: Data received: ", data)
+    #if(self.modep==1): print("DEBUG Server: Data received: ", data)      # KN: Enable this print to see the data received in debug mode
     if (data == b""):
-        if (self.modep ==1 | self.modep == 2): print ("Null Method, Discarding")
+        if (self.modep == 1 | self.modep == 2): print ("Null Method, Discarding")
     else:
         treq = bytes.decode(data)
-        self._wait_for_connections(s_left, addr, treq)
+        self._wait_for_connections(s_left,addr,treq)
 
  def conexion(self):     # Function in charge of the coordination of sockets
     ANY_ADDR = b'FFFFFFFFFFFFFFFF'
@@ -316,7 +315,7 @@ class Server:
                 data,sender = swlp.trecvcontrol(self.s_right, my_lora_address, ANY_ADDR, self.modep)
                 LoRaRec(data,self.s_right,sender)
                 if (self.modep == 1): 
-                    print ("DEBUG Server: done reading data from the LORA channel using swlpv3:", data)
+                    #print ("DEBUG Server: Done reading data from the LORA channel using swlpv3:", data)    # KN: Enable this print to see the reading data from the LoRa channel in debug mode
                     print ("The End")                
                 ufun.flash_led_to(OFF)
 
@@ -328,7 +327,7 @@ def LoRaRec(data,socket,source_address):
     tabla = BaseDatos(mode_print)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
     if (mode_print == 1): 
-        print ("DEBUG Server: Content in reception LoRa", data)
+        #print ("DEBUG Server: Content in reception LoRa", data)    # KN: Enable this print to see the content in reception LoRa in debug mode
         print ("DEBUG Server: Source Address in LoRaRec ", source_address)
     if (source_address == ANY_ADDR):
         content2 = str(data)     # Capturing the data, and changing the format
@@ -337,7 +336,7 @@ def LoRaRec(data,socket,source_address):
             if (mode_print == 1): print ("DEBUG Server: It's the raspberry IP")
         if (mode_print == 1): print ("DEBUG Server: IP Lora: ", str(IPlora))
         lenght = len(user_raw)
-        userf = user_raw[:lenght-1]
+        userf = user_raw[:lenght - 1]
         if (userf == "broadcast"):     # Message to all users
             message_broadcast = str(IPlora[2:])
             tabla = BaseDatos(mode_print)
@@ -352,7 +351,7 @@ def LoRaRec(data,socket,source_address):
             sent, retrans, sent, notsend = swlp.tsend(my_lora_address, socket, my_lora_address, IPloraf, mode_print)    # Function to send a LoRa Message using the protocol
     elif (source_address == my_lora_address[8:]):    # The message is for me, I'm going to save it
         message_raw = data
-        if (mode_print == 1): print ("DEBUG Server: message in server", message_raw)
+        #if (mode_print == 1): print ("DEBUG Server: Message in server", message_raw)      # KN: Enable this print to see the message in server in debug mode
         if (mode_print == 2): print ("Receiving message")
         if (message_raw == b"Failed"):
             print ("Reception Failed, Discarding")
@@ -360,11 +359,11 @@ def LoRaRec(data,socket,source_address):
             mensajet = str(message_raw)
             idEmisor, messagef,user_final = mensajet.split(",")
             if (mode_print == 1):
-                print("Sender: "+str(idEmisor[1:]))
-                print("Message: "+str(messagef))
-                print("User: "+str(user_final))
+                print ("Sender: " + str(idEmisor[1:]))
+                #print ("Message: " + str(messagef))    # KN: Enable this print to see the message in debug mode
+                print ("User: " + str(user_final))
             lenght = len(user_final)
-            userf = user_final[:lenght-1]
+            userf = user_final[:lenght - 1]
             tabla.ingreso(idEmisor[2:],userf,messagef)    # Function to save the message in the database
 
 
@@ -394,10 +393,10 @@ mode_print = choose_mode()   # Function to choose print mode 1:Debug Mode 2:Verb
 # Enabling garbage collection
 gc.enable()
 gc.collect()
-if (mode_print==1): print ("mem_free: ", gc.mem_free())
+if (mode_print == 1): print ("mem_free: ", gc.mem_free())
 sd = SD()
 os.mount(sd, '/sd')
-if (mode_print==1): print ("SD Card Enabled")
+if (mode_print == 1): print("SD Card Enabled")
 # Starting LoRa
 lora = LoRa(mode=LoRa.LORA,
         frequency=freq,         
@@ -417,14 +416,14 @@ lora = LoRa(mode=LoRa.LORA,
 # The lopy is configured as an Access Point and HTTP server
 my_lora_address = binascii.hexlify(network.LoRa().mac())
 source_address = str(str(my_lora_address[8:]))
-n_network=(source_address[-4:-1])
+n_network = (source_address[-4:-1])
 lopy_name = "messenger" + str(n_network)
-wlan = WLAN(mode = WLAN.STA_AP, ssid = lopy_name)
-wlan.init(mode = WLAN.STA_AP, ssid = lopy_name, auth = None, channel = 7, antenna = WLAN.INT_ANT)
+wlan = WLAN(mode=WLAN.STA_AP, ssid=lopy_name)
+wlan.init(mode=WLAN.STA_AP, ssid=lopy_name, auth=None, channel=7, antenna=WLAN.INT_ANT)
 print ("Network Name: " + str(lopy_name))
 print ("Starting web server")
 tabla = BaseDatos(mode_print)    # Instance Class Database
-s = Server(80, mode_print)    # Construct server object
+s = Server(80,mode_print)    # Construct server object
 s.activate_server()    # Acquire the socket
 s.connectionLoRa()     # Acquire Socket LoRa
 s.conexion()
