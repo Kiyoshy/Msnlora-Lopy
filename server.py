@@ -394,9 +394,14 @@ mode_print = choose_mode()   # Function to choose print mode 1:Debug Mode 2:Verb
 gc.enable()
 gc.collect()
 if (mode_print == 1): print ("mem_free: ", gc.mem_free())
-sd = SD()
-os.mount(sd, '/sd')
-if (mode_print == 1): print("SD Card Enabled")
+
+try:
+	sd = SD()
+	os.mount(sd, '/sd')
+	if (mode_print == 1): print("SD Card Enabled")
+except:
+	print("Warning: no SD Card")
+
 # Starting LoRa
 lora = LoRa(mode=LoRa.LORA,
         frequency=freq,         
