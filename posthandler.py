@@ -110,20 +110,30 @@ def reconocimiento(the_sock,tbs,message,flag_broadcast, mode):
 def run(post_body,socket,mac,sender,flag_broadcast, mode):
     gc.enable()
     gc.collect()
-    print ("---->mem_free: ", gc.mem_free())
+#    print ("---->mem_free: ", gc.mem_free())
     tabla = BaseDatos(mode)
     DEBUG_MODE,VERBOSE_MODE, NORMAL_MODE = swlp.choose_mode(mode)
     ufun.set_led_to(BLUE)
     dest_lora_address = b""
-    # PM: extracting data to be sent from passed POST body 
-    blks = post_body.split("&")
-    #if DEBUG_MODE: print("DEBUG Posthandler: Data received from the form: ", blks)       # KN: Enable this print to see the value of blks in debug mode
-    tbs = str(mac)
-    for i in blks:
-        v = i.split("=")
-        tbs += "," + v[1]
-    #if DEBUG_MODE: print("DEBUG Posthandler: tbs: ", tbs)     # KN: Enable this print to see the value of tbs in debug mode
-    loramac, receiver, message = tbs.split(",")
+
+    # handling mqttproxy data
+    if (flag_broadcast == 3):
+        loramac = str(mac)
+        receiver = "mqttproxy"  # There may be various but we want to get to the closest one (anycasting)
+        message = "'"+post_body+"'"
+        flag_broadcast = 0      # resetting for unicast
+    else:
+        # PM: extracting data to be sent from passed POST body 
+        blks = post_body.split("&")
+        print("blks", blks)
+        #if DEBUG_MODE: print("DEBUG Posthandler: Data received from the form: ", blks)       # KN: Enable this print to see the value of blks in debug mode
+        tbs = str(mac)
+        for i in blks:
+            v = i.split("=")
+            tbs += "," + v[1]
+        #if DEBUG_MODE: print("DEBUG Posthandler: tbs: ", tbs)     # KN: Enable this print to see the value of tbs in debug mode
+        loramac, receiver, message = tbs.split(",")
+
     # AM: Checking where to send the message
     start_search_time = utime.ticks_ms()
     if (flag_broadcast == 1):

@@ -7,37 +7,35 @@
 # KN: Added support for 150 KB
 # AM: Added operation between two devices
 
-import socket     # Networking support
-from time import time      # Current time
-import ubinascii
-import binascii
-import posthandler    # PM: code to be executed to handle a POST
-import swlp    # AM: LoRa Protocol
-from tabla import BaseDatos # AM: Management of user and messages
-from network import LoRa    # AM: LoRa
-import network
-import select    # AM: Used to change between the sockets
-import ufun      # AM: Used to handle the leds in the lopy
-import machine
-from network import WLAN
 from machine import SD
+from network import LoRa
+from network import WLAN
+from time import time
+import binascii
+import json
 import gc
+import machine
+import network
 import os
+import select
+import socket
+import ubinascii
 import utime
 
+import ufun      # AM: Used to handle the leds in the lopy
 
-RED = 0xFF0000
-YELLOW = 0xFFFF33
-GREEN = 0x007F00
-PINK=0x6b007f
-BLUE= 0x005e63
-OFF = 0x000000
-WEB_PAGES_HOME_DIR = '/flash'    # Directory where webpage files are stored
-ANY_ADDR = b'FFFFFFFF'
-flag = 0
-DEBUG_MODE = False
-VERBOSE_MODE=False
-NORMAL_MODE=False
+from tabla import BaseDatos # AM: Management of user and messages
+import posthandler    # PM: code to be executed to handle a POST
+import swlp    # AM: LoRa Protocol
+
+
+RED 	= 0xFF0000
+YELLOW 	= 0xFFFF33
+GREEN 	= 0x007F00
+PINK	=0x6b007f
+BLUE	= 0x005e63
+OFF 	= 0x000000
+
 # LoRA parameters to work with raspberry
 freq=869000000                  # def.: frequency=868000000         
 tx_pow=14                       # def.: tx_power=14                 
@@ -54,6 +52,13 @@ tx_retr=1                       # def.: tx_retries=1
 region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4         
 dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A   
 flag_mode=0
+
+WEB_PAGES_HOME_DIR = '/flash'    # Directory where webpage files are stored
+ANY_ADDR = b'FFFFFFFF'
+
+DEBUG_MODE   = False
+VERBOSE_MODE = False
+NORMAL_MODE  = False
 
 
 class Server:
@@ -118,28 +123,30 @@ class Server:
         h = 'HTTP/1.1 200 OK\n'
      elif (code == 404):
         h = 'HTTP/1.1 404 Not Found\n'
-     # write further headers
+     # write rest of the headers
      # current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
      # PM: should find an alternative for LoPys
      current_date = '4 Agosto 1965'
      h += 'Date: ' + current_date +'\n'
-     h += 'Server: Simple-Python-HTTP-Server\n'
+     h += 'Server: LoRa-Messaging\n'
      h += 'Connection: close\n\n'  # signal that the conection will be closed after completing the request
      return h
 
- def _wait_for_connections(self,s_left,addr,treq):
+ def _wait_for_connections(self, s_left, addr, treq):
      # determine request method  (HEAD and GET are supported) (PM: added support to POST )
+
      request_method = treq.split(' ')[0]
      if (self.modep == 1):
         print ("Method: ", request_method)
         print ("Full HTTP message: -->")
-        #print (treq)      # KN: Enable this print to see the value of treq in debug mode
+        print (treq)      # KN: Enable this print to see the value of treq in debug mode
         print ("<--")
      treqhead = treq.split("\r\n\r\n")[0]
+     print("treqhead:", treqhead)
      treqbody = treq[len(treqhead):].lstrip()      # PM: makes easier to handle various types of newlines
      if (self.modep == 1):
         print ("only the HTTP body: -->")
-        #print (treqbody)    # KN: Enable this print to see the value of treqbody in debug mode
+        print (treqbody)    # KN: Enable this print to see the value of treqbody in debug mode
         print ("<--")
      # split on space "GET /file.html" -into-> ('GET','file.html',...)
      file_requested = treq.split(' ')
@@ -154,14 +161,14 @@ class Server:
      elif (file_requested == '/favicon.ico'):  # most browsers ask for this file...
              file_requested = '/index.html' # ...giving them index.html instead
      file_requested = self.www_dir + file_requested
-     if (self.modep == 1): print ("Serving web page [",file_requested,"]")
+     if (self.modep == 1): print ("Serving web page ["+file_requested+"]")
 
 # GET method
      if (request_method == 'GET') | (request_method == 'HEAD') :
      ## Load file content
+         if (self.modep == 1): print ("file_requested: ", file_requested)
          try:
              gc.collect()
-             if (self.modep == 1): print ("mem_free: ", gc.mem_free())
              if (request_method == 'GET' and file_requested =='/flash/registro'):
                  if (self.modep == 1): print ('Regreso del Usuario',self.userR)
                  tabla = BaseDatos(self.modep)
@@ -169,7 +176,6 @@ class Server:
                  if (self.modep == 1): print ('Datos Regreso', response_content)
              else:
                  file_handler = open(file_requested,'rb')
-                 if (self.modep == 1): print ('file_handler', file_handler)
                  if (request_method == 'GET'):      # only read the file when GET
                     response_content = file_handler.read()     # read file content
                  file_handler.close()
@@ -189,7 +195,7 @@ class Server:
                         response_content = b"<html><head><meta charset='utf-8'><title>LoRa</title></head><body><p>Error 404: File not found</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
          server_response =  response_headers.encode()      # return headers for GET and HEAD
          if (request_method == 'GET'):
-            server_response +=  response_content      # return additional conten for GET only
+            server_response +=  response_content      # return additional content for GET only
          s_left.send(server_response)
          if (self.modep == 1): print ("Closing connection with client")
          ufun.set_led_to(OFF)
@@ -229,6 +235,37 @@ class Server:
                  else:
                      print ("... PM: empty POST received")
                      response_content = b"<html><body><p>Error: Please Choose a username</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+
+             # Handling sensors data: START
+             elif (file_requested.find("mqttproxypush") != -1):
+                 if (self.modep == 1): 
+                    print ("DEBUG Server: MqttProxy PUSH request")
+                    print ("DEBUG Server: lenght user:", len(treqbody))
+                    print ("DEBUG Server: treqbody:", treqbody)
+                 if (len(treqbody) > 10 ):  # to be adapted!!!
+                     print ("MqttProxy PUSH request Ok")
+                     response_content = b"<html><body><p>MqttProxy PUSH request</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+                 else:
+                     print ("MqttProxy request ERROR")
+                     response_content = b"<html><body><p>ERROR MqttProxy PUSH request</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+                 # value 3 in "broadcast field" indicates that is anycasting, that is the closest with the service    
+                 response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,3, self.modep)
+             elif (file_requested.find("mqttproxypop") != -1):                 
+                 if (self.modep == 1): 
+                    print ("DEBUG Server: MqttProxy POP request")
+                    print ("DEBUG Server: lenght user:", len(treqbody))
+                    print ("DEBUG Server: treqbody:", treqbody)
+                 if (len(treqbody) > 10 ):  # to be adapted!!!
+                     print ("MqttProxy POP request Ok")
+                     response_content = b"<html><body><p>MqttProxy POP request</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+                 else:
+                     print ("MqttProxy request ERROR")
+                     response_content = b"<html><body><p>ERROR MqttProxy POP request</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+                 gc.collect()
+                 tabla = BaseDatos(self.modep)
+                 response_content = tabla.consulta("mqttproxy")
+             # Handling sensors data: END
+
              elif (file_requested.find("broadcast") != -1):
                 if (self.modep == 1 | self.modep ==2 ): print ("AM: Sending Message Broadcast")
                 if (self.modep == 3): print ("Message Broadcast sent")
@@ -256,6 +293,7 @@ class Server:
              print ("Warning, file not found. Serving response code 404\n", e)
              response_headers = self._gen_headers(404)
              response_content = b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
+
          server_response =  response_headers.encode()       # return headers
          server_response +=  response_content       # return additional content
          s_left.send(server_response)
@@ -357,14 +395,28 @@ def LoRaRec(data,socket,source_address):
             print ("Reception Failed, Discarding")
         elif (message_raw != b"") and (message_raw != b"Failed"):
             mensajet = str(message_raw)
-            idEmisor, messagef,user_final = mensajet.split(",")
-            if (mode_print == 1):
-                print ("Sender: " + str(idEmisor[1:]))
-                #print ("Message: " + str(messagef))    # KN: Enable this print to see the message in debug mode
-                print ("User: " + str(user_final))
-            lenght = len(user_final)
-            userf = user_final[:lenght - 1]
-            tabla.ingreso(idEmisor[2:],userf,messagef)    # Function to save the message in the database
+            print("XXXYYYraw", message_raw)
+            # handling sensors data... there must be a better way to send and receive json
+            if (mensajet[-10:-1] == "mqttproxy"):
+                aaa = mensajet.find("{")
+                zzz = mensajet.find("}")
+                user_final = "mqttproxy"
+                messagef = str(mensajet[aaa:zzz+1])
+                idEmisor = str(mensajet[2:aaa-1])
+                if (mode_print == 1):
+                    print ("Sender: " + idEmisor)
+                    print ("Message: " + messagef)    # KN: Enable this print to see the message in debug mode
+                    print ("User: " + user_final)
+                tabla.ingreso(idEmisor,user_final,messagef)    # Function to save the message in the database
+            else:
+	            idEmisor, messagef, user_final = mensajet.split(",")
+	            if (mode_print == 1):
+	                print ("Sender: " + str(idEmisor[1:]))
+	                #print ("Message: " + str(messagef))    # KN: Enable this print to see the message in debug mode
+	                print ("User: " + str(user_final))
+	            lenght = len(user_final)
+	            userf = user_final[:lenght - 1]
+	            tabla.ingreso(idEmisor[2:],userf,messagef)    # Function to save the message in the database
 
 
 ################################################################################################################################
@@ -374,15 +426,15 @@ def choose_mode():   # KN: Execution mode assignment
         mode = str.lower(input('Choose the execution mode ("Debug" "Verbose" "Normal"): '))
         if mode == "debug":
             modemes = 1
-            print ("--> Running sever in DEBUG mode")
+            print ("--> Running server in DEBUG mode")
             break
         elif mode == "verbose":
             modemes = 2
-            print ("--> Running sever in VERBOSE mode")
+            print ("--> Running server in VERBOSE mode")
             break
         elif mode == "normal":
             modemes = 3
-            print ("--> Running sever in NORMAL mode")
+            print ("--> Running server in NORMAL mode")
             break
         else:
             print ("--> Unrecognized execution mode")
@@ -400,7 +452,7 @@ try:
 	os.mount(sd, '/sd')
 	if (mode_print == 1): print("SD Card Enabled")
 except:
-	print("Warning: no SD Card")
+	print("WARNING: no SD Card")
 
 # Starting LoRa
 lora = LoRa(mode=LoRa.LORA,
@@ -418,17 +470,19 @@ lora = LoRa(mode=LoRa.LORA,
         tx_retries=tx_retr,
         region=LoRa.EU868,              
         device_class=dev_class)
+
 # The lopy is configured as an Access Point and HTTP server
 my_lora_address = binascii.hexlify(network.LoRa().mac())
-source_address = str(str(my_lora_address[8:]))
-n_network = (source_address[-4:-1])
-lopy_name = "messenger" + str(n_network)
-wlan = WLAN(mode=WLAN.STA_AP, ssid=lopy_name)
+lopy_name = "messenger_" + my_lora_address.decode()[-3:]
+print ("Network Name: " + lopy_name)
+wlan = WLAN()
 wlan.init(mode=WLAN.STA_AP, ssid=lopy_name, auth=None, channel=7, antenna=WLAN.INT_ANT)
-print ("Network Name: " + str(lopy_name))
-print ("Starting web server")
+
 tabla = BaseDatos(mode_print)    # Instance Class Database
-s = Server(80,mode_print)    # Construct server object
+
+print ("Starting web server")
+s = Server(80, mode_print)    # Construct server object
 s.activate_server()    # Acquire the socket
 s.connectionLoRa()     # Acquire Socket LoRa
+
 s.conexion()
