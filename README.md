@@ -7,10 +7,10 @@ Based on https://github.com/gie-sakura/msnlora
 ### Technical details
 
    - Device: Pycom LoPy4
-   - Firmware version: 1.18.2.r3
+   - Firmware version: 1.18.2.r3 or higher
 
 ### Current limitations
-This version is capable of transmitting 150 KB.
+This version is capable of transmitting up to 150 KB.
 
 ## Getting Started
 
@@ -55,14 +55,6 @@ Confirm that the device only contains the main.py and boot.py files:
 $ sudo python3 -m there ls -l /flash/ *
 ```
 
-If the device contains more files, it must be formatted type (otherwise, go to the next step):
-```
-$ sudo python3 -m there -i
-	>>> import os
-    >>> os.mkfs ("/flash")
-    >>> Crtl + AltGr + ]
-```
-
 Upload the files of the repository to the device:
 ```
 $ sudo python3 -m there push * /flash
@@ -83,6 +75,17 @@ Connect to the network and type the address
 ```
 192.168.4.1
 ```
+
+## User access
+To srta using it you need to have a device with WiFi and a browser. Open a browser in your device and go to `http://192.168.4.1`. A form will appear with the necessaary information
+
+
+## Mqttproxy extension
+The 'mqttproxy' directory stores the version of the code that integrates sensors into the system. The core of the network works as in the base version.
+File `client.py` with the proper configuration has to run in a LoPy with a Pysense board. In this code example the luminosity is read and sent as a JSON message.
+The destination is a device called 'mqttproxy'. We use anycasting to reach this device since it basically works as a proxy to a predifiend MQTT broker, in our example the broker is "test.mosquitto.org".
+
+Files "mqttproxyreg.py" and "mqttproxy.py" must be run in a computer (RPis are fine) and are used to register, the former, and to get data from the close by LoPy and forward it to the broker, the latter.
 
 ## Authors
 
