@@ -1,6 +1,6 @@
 # Messenger LoRa
 
-#### Improving RSEt interface
+#### Improving REST interface
 
 Low-power system to connect isolated communities based on the LoRa protocol to provide a messaging system to registered users using LoPy devices.
 
