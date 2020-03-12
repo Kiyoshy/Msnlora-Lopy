@@ -1,5 +1,7 @@
 # Messenger LoRa
 
+#### Improving RSEt interface
+
 Low-power system to connect isolated communities based on the LoRa protocol to provide a messaging system to registered users using LoPy devices.
 
 Based on https://github.com/gie-sakura/msnlora
