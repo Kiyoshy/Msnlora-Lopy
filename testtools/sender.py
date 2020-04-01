@@ -1,88 +1,104 @@
-import socket
+import getopt
 import json
+import socket
+import sys
 import time
-import ufun
 
-from pysense import Pysense
-from LTR329ALS01 import LTR329ALS01     # Digital Ambient Light Sensor
-from raw2lux import raw2Lux             # ... additional library for the light sensor
+#
+# When sender is a LoPy
+#
+# import ufun
+# WIFI_SSID = "messenger_e57"
 
-TCP_IP = '192.168.4.1'
-TCP_PORT = 80
-WIFI_SSID = "messenger_e57"
+TCP_IP    = '192.168.4.1'
+TCP_PORT  = 80
 
-BUFFER_SIZE = 1024
+USER      = "pietro"
+RCVR      = "scarlett"
+MESSAGE  = "Hola, que tal?"
 
-DEV_ID = "sensor1"
-QOS = 0
-TOPIC = "sensor/value"
+
+def create_POST_msg(type, content):
+    cl = len(content)
+    m  = 'POST ' + type + ' HTTP/1.1\r\n'
+    m += 'Host: '+ TCP_IP + '\r\n'
+    m += 'User-Agent: TestingDevice\r\n'
+    m += 'Content-Length: ' + str(cl) + '\r\n'
+    m += '\r\n'
+    m += content
+
+    return(m)
+
 
 def send_it(m):
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((TCP_IP, TCP_PORT))
-	s.send(m)
-	# simply discarding the response... for the moment
-	dl = []
-	while 1:
-		d = s.recv(BUFFER_SIZE)
-		dl.append(d)
-		if not d: break
-	s.close()
-	dd = b''.join(dl)
-	r = dd.decode()
-	response = r.split('\n')[0]
-	if response == "HTTP/1.1 200 OK":
-	    print("Got: "+response)
-	else:
-	    print("ERROR Got: "+response)
+    BUFFER_SIZE = 1024
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((TCP_IP, TCP_PORT))
+    s.send(m.encode())
+
+    dl = []
+    while 1:
+        d = s.recv(BUFFER_SIZE)
+        dl.append(d)
+        if not d: break
+    s.close()
+    dd = b''.join(dl)
+    r = dd.decode()
+    response = r.split('\n')[0]
+    if response == "HTTP/1.1 200 OK":
+        print("Got: "+response)
+    else:
+        print("ERROR Got: "+response)
+
+def main(argv):
+    global WIFI_SSID, USER, MESSAGE, RCVR
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'w:u:r:m:', ['wifissid=', 'user=', 'receiver=', 'message='])
+    except getopt.GetoptError:
+        print ('sender.py -w <WIFI_SSID> -u <USER> -r <RCVR> -m <MESSAGE>')
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt in ('-m', '--message'):
+            MESSAGE = arg
+        elif opt in ('-w', '--wifissid'):
+            WIFI_SSID = arg
+        elif opt in ('-u', '--user'):
+            USER = arg
+        elif opt in ('-r', '--receiver'):
+            RCVR = arg
+        else:
+            print ('sender.py -w <WIFI_SSID> -u <USER> -r <RCVR> -m <MESSAGE>')
+            sys.exit(2)
 
 
-def get_sdata(lite_s):
+if __name__ == "__main__":
 
-    v = raw2Lux(lite_s.light())
-    print("Light (raw2lux): " + str(v))
-    
-    return int(v)
-
-ufun.connect_to_wifi(WIFI_SSID, "")
-
-
-# Enabling PySense boards
-py = Pysense()
-# Digital Ambient Light Sensor
-lite_s = LTR329ALS01(py)
+    main(sys.argv[1:])
 
 #
-# registering
+# When sender is a LoPy
 #
-rest_msg = "POST /registro.html HTTP/1.1\r\n"
-rest_msg += 'Host: 192.168.4.1\r\n'
-rest_msg += 'User-Agent: LoPy\r\n'
-rest_msg += 'Content-Length: 19\r\n'
-rest_msg += '\r\n'
-rest_msg += 'sender_name=sensor1'
-send_it(rest_msg)
+#    ufun.connect_to_wifi(WIFI_SSID, "")
 
-time.sleep(1)
+    #
+    # registering
+    #
+    print("registering USER: ", USER)
+    rest_msg = create_POST_msg("/registro.html", "sender_name="+USER)
+    send_it(rest_msg)
 
-#
-# sending sensor data
-#
-v = get_sdata(lite_s)
-d = {'DEV_ID': DEV_ID, 'QOS': QOS, 'TOPIC': TOPIC, 'VALUE': v}
+    time.sleep(1)
 
-jd = json.dumps(d)
-print("sending:", jd)
+    # dest_name=Luigi&user_message=Testo
+    print("sending: ", MESSAGE, " to ", RCVR)
 
-rest_msg = 'POST /mqttproxypush HTTP/1.1\r\n'
-rest_msg += 'Host: 192.168.4.1\r\n'
-rest_msg += 'User-Agent: LoPy\r\n'
-rest_msg += 'Content-Length: '+str(len(jd))+'\r\n'
-rest_msg += '\r\n'
-rest_msg += jd
-send_it(rest_msg)
+    rest_msg = create_POST_msg("/execposthandler", "dest_name="+RCVR+"&user_message="+MESSAGE)
+    send_it(rest_msg)
 
-time.sleep(1)
+    time.sleep(1)
 
 
-            
+                
