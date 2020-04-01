@@ -37,20 +37,20 @@ BLUE	= 0x005e63
 OFF 	= 0x000000
 
 # LoRA parameters to work with raspberry
-freq=869000000                  # def.: frequency=868000000         
-tx_pow=14                       # def.: tx_power=14                 
-band=LoRa.BW_125KHZ             # def.: bandwidth=LoRa.868000000    
-spreadf=7                       # def.: sf=7                        
-prea=8                          # def.: preamble=8                  
-cod_rate=LoRa.CODING_4_5        # def.: coding_rate=LoRa.CODING_4_5 
-pow_mode=LoRa.ALWAYS_ON         # def.: power_mode=LoRa.ALWAYS_ON   
-tx_iq_inv=False                 # def.: tx_iq=false                 
-rx_iq_inv=False                 # def.: rx_iq=false                 
-ada_dr=False                    # def.: adr=false                   
-pub=False                       # def.: public=true                 
+freq=869000000                  # def.: frequency=868000000
+tx_pow=14                       # def.: tx_power=14
+band=LoRa.BW_125KHZ             # def.: bandwidth=LoRa.868000000
+spreadf=7                       # def.: sf=7
+prea=8                          # def.: preamble=8
+cod_rate=LoRa.CODING_4_5        # def.: coding_rate=LoRa.CODING_4_5
+pow_mode=LoRa.ALWAYS_ON         # def.: power_mode=LoRa.ALWAYS_ON
+tx_iq_inv=False                 # def.: tx_iq=false
+rx_iq_inv=False                 # def.: rx_iq=false
+ada_dr=False                    # def.: adr=false
+pub=False                       # def.: public=true
 tx_retr=1                       # def.: tx_retries=1
-region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4         
-dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A   
+region=LoRa.EU868               # def.: region=LoRa.EU868 just for LoPy4
+dev_class=LoRa.CLASS_A          # def.: device_class=LoRa.CLASS_A
 flag_mode=0
 
 WEB_PAGES_HOME_DIR = '/flash'    # Directory where webpage files are stored
@@ -105,7 +105,7 @@ class Server:
         self.loramac = binascii.hexlify(network.LoRa().mac())
         if (self.modep == 1): print ("Socket Created") # AM: Acquisition socket LoRa
     except socket.error:
-        exit('Error creating socket.') 
+        exit('Error creating socket.')
 
  def shutdown(self):
      """ Shut down the server """
@@ -215,7 +215,7 @@ class Server:
                  else:
 	                 if (self.modep == 1): print ("... PM: empty POST received")
 	                 response_content = b"<html><body><p>Error: EMPTY FORM RECEIVED, Please Check Again</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-             elif (file_requested.find("tabla") != -1):                 
+             elif (file_requested.find("tabla") != -1):
                  if (self.modep == 1): print ("DEBUG Server: Checking Messages")
                  if (self.modep == 2): print ("Checking Messages")
                  if (self.modep == 3): print ("Checking messages")
@@ -223,7 +223,7 @@ class Server:
                  tabla = BaseDatos(self.modep)
                  response_content = tabla.consulta(self.userR)
              elif (file_requested.find("registro") != -1):
-                 if (self.modep == 1): 
+                 if (self.modep == 1):
                     print ("DEBUG Server: Register")
                     print ("DEBUG Server: lenght user:", len(treqbody))
                     print ("DEBUG Server: treqbody:", treqbody)
@@ -238,7 +238,7 @@ class Server:
 
              # Handling sensors data: START
              elif (file_requested.find("mqttproxypush") != -1):
-                 if (self.modep == 1): 
+                 if (self.modep == 1):
                     print ("DEBUG Server: MqttProxy PUSH request")
                     print ("DEBUG Server: lenght user:", len(treqbody))
                     print ("DEBUG Server: treqbody:", treqbody)
@@ -248,10 +248,10 @@ class Server:
                  else:
                      print ("MqttProxy request ERROR")
                      response_content = b"<html><body><p>ERROR MqttProxy PUSH request</p><p>Python HTTP server</p><p><a href='/'>Back to home</a></p></body></html>"
-                 # value 3 in "broadcast field" indicates that is anycasting, that is the closest with the service    
+                 # value 3 in "broadcast field" indicates that is anycasting, that is the closest with the service
                  response_content, self.dest_lora_address = posthandler.run(treqbody,self.s_right,self.loramac,self.userR,3, self.modep)
-             elif (file_requested.find("mqttproxypop") != -1):                 
-                 if (self.modep == 1): 
+             elif (file_requested.find("mqttproxypop") != -1):
+                 if (self.modep == 1):
                     print ("DEBUG Server: MqttProxy POP request")
                     print ("DEBUG Server: lenght user:", len(treqbody))
                     print ("DEBUG Server: treqbody:", treqbody)
@@ -302,14 +302,14 @@ class Server:
          s_left.close()
      else:
          print ("Unknown HTTP request method:", request_method)
- 
+
  # KN: Function to receive all the message via TCP
  def checking_connection(self,s_left,addr):
     data = b""
     data = s_left.recv(1024)
     while True:
         check_header = bytes.decode(data)
-        check_header_list = (check_header.split('\r\n'))  #Create list to check header
+        check_header_list = (check_header.split('\n'))  #Create list to check header
         check_header_dict = {}
         for element in check_header_list:  #Create a dict
             s_element = (str(element))
@@ -352,9 +352,9 @@ class Server:
                 ufun.flash_led_to(YELLOW)
                 data,sender = swlp.trecvcontrol(self.s_right, my_lora_address, ANY_ADDR, self.modep)
                 LoRaRec(data,self.s_right,sender)
-                if (self.modep == 1): 
+                if (self.modep == 1):
                     #print ("DEBUG Server: Done reading data from the LORA channel using swlpv3:", data)    # KN: Enable this print to see the reading data from the LoRa channel in debug mode
-                    print ("The End")                
+                    print ("The End")
                 ufun.flash_led_to(OFF)
 
 ###################################################################################
@@ -364,7 +364,7 @@ def LoRaRec(data,socket,source_address):
     mensaje = b""
     tabla = BaseDatos(mode_print)
     my_lora_address = binascii.hexlify(network.LoRa().mac())
-    if (mode_print == 1): 
+    if (mode_print == 1):
         #print ("DEBUG Server: Content in reception LoRa", data)    # KN: Enable this print to see the content in reception LoRa in debug mode
         print ("DEBUG Server: Source Address in LoRaRec ", source_address)
     if (source_address == ANY_ADDR):
@@ -441,7 +441,10 @@ def choose_mode():   # KN: Execution mode assignment
     return modemes
 
 
-mode_print = choose_mode()   # Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
+# FOR THE MOMENT!
+# mode_print = choose_mode()   # Function to choose print mode 1:Debug Mode 2:Verbose Mode 3:Normal Mode
+mode_print = 1
+
 # Enabling garbage collection
 gc.enable()
 gc.collect()
@@ -456,19 +459,19 @@ except:
 
 # Starting LoRa
 lora = LoRa(mode=LoRa.LORA,
-        frequency=freq,         
-        tx_power=tx_pow,               
-        bandwidth=band,    
-        sf=spreadf,                       
-        preamble=prea,               
+        frequency=freq,
+        tx_power=tx_pow,
+        bandwidth=band,
+        sf=spreadf,
+        preamble=prea,
         coding_rate=cod_rate,
-        power_mode=pow_mode,  
-        tx_iq=tx_iq_inv,                
-        rx_iq=rx_iq_inv,                
-        adr=ada_dr,                  
-        public=pub,       
+        power_mode=pow_mode,
+        tx_iq=tx_iq_inv,
+        rx_iq=rx_iq_inv,
+        adr=ada_dr,
+        public=pub,
         tx_retries=tx_retr,
-        region=LoRa.EU868,              
+        region=LoRa.EU868,
         device_class=dev_class)
 
 # The lopy is configured as an Access Point and HTTP server
