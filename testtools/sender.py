@@ -15,7 +15,7 @@ TCP_PORT  = 80
 
 USER      = "pietro"
 RCVR      = "scarlett"
-MESSAGE  = "Hola, que tal?"
+MESSAGE   = "Hola, que tal?"
 
 
 def create_POST_msg(type, content):
