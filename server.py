@@ -1,5 +1,3 @@
-# !/usr/bin/python
-
 # PM: based on http://blog.wachowicz.eu/?p=256
 # PM: added POST handling
 # import signal  # Signal support (server shutdown on signal receive)
@@ -32,7 +30,7 @@ import swlp    # AM: LoRa Protocol
 RED 	= 0xFF0000
 YELLOW 	= 0xFFFF33
 GREEN 	= 0x007F00
-PINK	=0x6b007f
+PINK	= 0x6b007f
 BLUE	= 0x005e63
 OFF 	= 0x000000
 
